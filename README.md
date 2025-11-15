@@ -15,6 +15,10 @@ cargo build
 cargo test -- --nocapture
 ```
 
+## Credits
+
+Inspired by [libmpv2-rs](https://github.com/kohsine/libmpv2-rs)
+
 ## License
 
 [LGPL-2.1](LICENSE)
