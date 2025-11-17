@@ -2,7 +2,7 @@
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct Mpv {
+pub struct MpvHandle {
     _unused: [u8; 0],
 }
 /** Callback function type for mpv events.
@@ -23,16 +23,16 @@ pub struct LibmpvWrapper {
             observed_properties: *const ::std::os::raw::c_char,
             event_callback: EventCallback,
             event_userdata: *mut ::std::os::raw::c_void,
-        ) -> *mut Mpv,
+        ) -> *mut MpvHandle,
         ::libloading::Error,
     >,
     pub mpv_wrapper_destroy: Result<
-        unsafe extern "C" fn(mpv: *mut Mpv),
+        unsafe extern "C" fn(handle: *mut MpvHandle),
         ::libloading::Error,
     >,
     pub mpv_wrapper_command: Result<
         unsafe extern "C" fn(
-            mpv: *mut Mpv,
+            handle: *mut MpvHandle,
             name: *const ::std::os::raw::c_char,
             args: *const ::std::os::raw::c_char,
         ) -> *mut ::std::os::raw::c_char,
@@ -40,7 +40,7 @@ pub struct LibmpvWrapper {
     >,
     pub mpv_wrapper_set_property: Result<
         unsafe extern "C" fn(
-            mpv: *mut Mpv,
+            handle: *mut MpvHandle,
             name: *const ::std::os::raw::c_char,
             value: *const ::std::os::raw::c_char,
         ) -> *mut ::std::os::raw::c_char,
@@ -48,7 +48,7 @@ pub struct LibmpvWrapper {
     >,
     pub mpv_wrapper_get_property: Result<
         unsafe extern "C" fn(
-            mpv: *mut Mpv,
+            handle: *mut MpvHandle,
             name: *const ::std::os::raw::c_char,
             format: *const ::std::os::raw::c_char,
         ) -> *mut ::std::os::raw::c_char,
@@ -98,21 +98,21 @@ impl LibmpvWrapper {
             mpv_wrapper_free_string,
         })
     }
-    /** Creates a new mpv instance (wrapper).
+    /** Creates a new mpv handle.
 
  @param initial_options A JSON string of initial mpv options (e.g., `{"idle": "yes"}`).
  @param observed_properties A JSON string mapping property names to their formats (e.g., `{"pause": "flag"}`).
                             The format can be "string", "flag", "int64", "double", or "node".
  @param event_callback A function pointer that will be called for mpv events.
  @param event_userdata A user-supplied pointer that will be passed to the event_callback.
- @return A pointer to the opaque Mpv wrapper instance, or NULL on failure.*/
+ @return A pointer to the opaque mpv handle, or NULL on failure.*/
     pub unsafe fn mpv_wrapper_create(
         &self,
         initial_options: *const ::std::os::raw::c_char,
         observed_properties: *const ::std::os::raw::c_char,
         event_callback: EventCallback,
         event_userdata: *mut ::std::os::raw::c_void,
-    ) -> *mut Mpv {
+    ) -> *mut MpvHandle {
         (self
             .mpv_wrapper_create
             .as_ref()
@@ -120,15 +120,18 @@ impl LibmpvWrapper {
                 "Expected function, got error.",
             ))(initial_options, observed_properties, event_callback, event_userdata)
     }
-    /** Destroys the mpv wrapper instance and terminates the mpv core.
+    /** Destroys the mpv handle and terminates the mpv core.
 
- @param mpv A valid pointer to the Mpv wrapper instance (obtained from `mpv_wrapper_create`).*/
-    pub unsafe fn mpv_wrapper_destroy(&self, mpv: *mut Mpv) {
-        (self.mpv_wrapper_destroy.as_ref().expect("Expected function, got error."))(mpv)
+ @param mpv A valid pointer to the mpv handle (obtained from `mpv_wrapper_create`).*/
+    pub unsafe fn mpv_wrapper_destroy(&self, handle: *mut MpvHandle) {
+        (self
+            .mpv_wrapper_destroy
+            .as_ref()
+            .expect("Expected function, got error."))(handle)
     }
     /** Executes an mpv command.
 
- @param mpv A valid pointer to the Mpv wrapper instance.
+ @param mpv A valid pointer to the mpv handle.
  @param name The name of the command (e.g., "set", "loadfile").
  @param args A JSON string representing an array of arguments (e.g., `["volume", "50"]`, `["path/to/video.mp4"]`).
              Pass an empty string "[]" or NULL for no arguments.
@@ -136,50 +139,50 @@ impl LibmpvWrapper {
          The caller MUST free this string using `mpv_wrapper_free_string`.*/
     pub unsafe fn mpv_wrapper_command(
         &self,
-        mpv: *mut Mpv,
+        handle: *mut MpvHandle,
         name: *const ::std::os::raw::c_char,
         args: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char {
         (self
             .mpv_wrapper_command
             .as_ref()
-            .expect("Expected function, got error."))(mpv, name, args)
+            .expect("Expected function, got error."))(handle, name, args)
     }
     /** Sets an mpv property.
 
- @param mpv A valid pointer to the Mpv wrapper instance.
+ @param mpv A valid pointer to the mpv handle.
  @param name The name of the property to set (e.g., "pause").
  @param value A JSON string representing the value (e.g., "true").
  @return A JSON string indicating success or failure.
          The caller MUST free this string using `mpv_wrapper_free_string`.*/
     pub unsafe fn mpv_wrapper_set_property(
         &self,
-        mpv: *mut Mpv,
+        handle: *mut MpvHandle,
         name: *const ::std::os::raw::c_char,
         value: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char {
         (self
             .mpv_wrapper_set_property
             .as_ref()
-            .expect("Expected function, got error."))(mpv, name, value)
+            .expect("Expected function, got error."))(handle, name, value)
     }
     /** Gets an mpv property.
 
- @param mpv A valid pointer to the Mpv wrapper instance.
+ @param mpv A valid pointer to the mpv handle.
  @param name The name of the property to get.
  @param format The format can be "string", "flag", "int64", "double", or "node".
  @return A JSON string containing the property value (e.g., `{"data": true}`) or an error.
          The caller MUST free this string using `mpv_wrapper_free_string`.*/
     pub unsafe fn mpv_wrapper_get_property(
         &self,
-        mpv: *mut Mpv,
+        handle: *mut MpvHandle,
         name: *const ::std::os::raw::c_char,
         format: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char {
         (self
             .mpv_wrapper_get_property
             .as_ref()
-            .expect("Expected function, got error."))(mpv, name, format)
+            .expect("Expected function, got error."))(handle, name, format)
     }
     /** Frees a C string that was returned by one of the `mpv_wrapper_*` functions.
 

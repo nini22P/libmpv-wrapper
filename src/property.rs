@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{convert::Infallible, ffi::CString};
 
-use crate::{Error, Mpv, Result, utils::cstr_to_string, utils::error_string};
+use crate::{Error, MpvHandle, Result, utils::cstr_to_string, utils::error_string};
 
 fn format_to_string(format_code: libmpv_sys::mpv_format) -> String {
     match format_code {
@@ -167,7 +167,7 @@ macro_rules! get_property_impl {
 
             let err = unsafe {
                 libmpv_sys::mpv_get_property(
-                    self.handle.inner(),
+                    self.inner(),
                     c_name.as_ptr(),
                     $mpv_format,
                     &mut data as *mut _ as *mut _,
@@ -202,7 +202,7 @@ macro_rules! get_property_ptr_impl {
 
             let err = unsafe {
                 libmpv_sys::mpv_get_property(
-                    self.handle.inner(),
+                    self.inner(),
                     c_name.as_ptr(),
                     $mpv_format,
                     &mut data as *mut _ as *mut _,
@@ -231,7 +231,7 @@ macro_rules! get_property_ptr_impl {
     };
 }
 
-impl Mpv {
+impl MpvHandle {
     get_property_ptr_impl!(
         get_property_string,
         String,
@@ -286,7 +286,7 @@ impl Mpv {
                 PropertyValue::String(s) => {
                     let c_value = CString::new(s)?;
                     libmpv_sys::mpv_set_property_string(
-                        self.handle.inner(),
+                        self.inner(),
                         c_name.as_ptr(),
                         c_value.as_ptr(),
                     )
@@ -294,20 +294,20 @@ impl Mpv {
                 PropertyValue::Flag(b) => {
                     let mut val: std::os::raw::c_int = if b { 1 } else { 0 };
                     libmpv_sys::mpv_set_property(
-                        self.handle.inner(),
+                        self.inner(),
                         c_name.as_ptr(),
                         libmpv_sys::mpv_format_MPV_FORMAT_FLAG,
                         &mut val as *mut _ as *mut _,
                     )
                 }
                 PropertyValue::Int64(mut i) => libmpv_sys::mpv_set_property(
-                    self.handle.inner(),
+                    self.inner(),
                     c_name.as_ptr(),
                     libmpv_sys::mpv_format_MPV_FORMAT_INT64,
                     &mut i as *mut _ as *mut _,
                 ),
                 PropertyValue::Double(mut f) => libmpv_sys::mpv_set_property(
-                    self.handle.inner(),
+                    self.inner(),
                     c_name.as_ptr(),
                     libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,
                     &mut f as *mut _ as *mut _,

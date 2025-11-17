@@ -4,7 +4,7 @@ use log::info;
 use std::ffi::CString;
 
 use crate::{
-    Error, Event, Mpv, MpvFormat, MpvHandle, Result, error_string,
+    Error, Event, MpvFormat, MpvHandle, Result, error_string,
     event::{EventHandler, EventListener, start_event_listener},
 };
 
@@ -109,7 +109,7 @@ impl Builder {
         self
     }
 
-    pub fn build(mut self) -> Result<Mpv> {
+    pub fn build(mut self) -> Result<MpvHandle> {
         let err = unsafe { libmpv_sys::mpv_initialize(self.handle.inner()) };
         if err < 0 {
             return Err(Error::Initialize(error_string(err)));
@@ -128,11 +128,9 @@ impl Builder {
             unsafe { libmpv_sys::mpv_terminate_destroy(event_handle.inner()) };
         }
 
-        let mpv = Mpv { handle };
-
         std::mem::forget(self);
 
-        Ok(mpv)
+        Ok(handle)
     }
 }
 

@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString, c_char, c_void};
 use std::ptr;
 use std::str::FromStr;
 
-use crate::{Builder, Event, Mpv, MpvFormat, PropertyValue, Result};
+use crate::{Builder, Event, MpvFormat, MpvHandle, PropertyValue, Result};
 
 #[derive(Serialize)]
 struct FfiResponse {
@@ -62,21 +62,21 @@ impl FfiResponse {
 /// @param userdata The user-supplied pointer passed to `mpv_wrapper_create`.
 pub type EventCallback = unsafe extern "C" fn(event: *const c_char, userdata: *mut c_void);
 
-/// Creates a new mpv instance (wrapper).
+/// Creates a new mpv handle.
 ///
 /// @param initial_options A JSON string of initial mpv options (e.g., `{"idle": "yes"}`).
 /// @param observed_properties A JSON string mapping property names to their formats (e.g., `{"pause": "flag"}`).
 ///                            The format can be "string", "flag", "int64", "double", or "node".
 /// @param event_callback A function pointer that will be called for mpv events.
 /// @param event_userdata A user-supplied pointer that will be passed to the event_callback.
-/// @return A pointer to the opaque Mpv wrapper instance, or NULL on failure.
+/// @return A pointer to the opaque mpv handle, or NULL on failure.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn mpv_wrapper_create(
     initial_options: *const c_char,
     observed_properties: *const c_char,
     event_callback: EventCallback,
     event_userdata: *mut c_void,
-) -> *mut Mpv {
+) -> *mut MpvHandle {
     let initial_options_str = if initial_options.is_null() {
         "{}"
     } else {
@@ -162,39 +162,39 @@ pub unsafe extern "C" fn mpv_wrapper_create(
     let builder = match Builder::new() {
         Ok(b) => b,
         Err(e) => {
-            eprintln!("[mpv-wrapper] Error: Failed to create MPV builder: {}", e);
+            eprintln!("[mpv-wrapper] Error: Failed to create mpv builder: {}", e);
             return ptr::null_mut();
         }
     };
 
-    let mpv_result = builder
+    let result = builder
         .set_options(initial_options)
         .and_then(|b| b.observed_properties(observed_properties))
         .map(|b| b.on_event(Box::new(event_handler)))
         .and_then(|b| b.build());
 
-    match mpv_result {
-        Ok(mpv) => Box::into_raw(Box::new(mpv)),
+    match result {
+        Ok(handle) => Box::into_raw(Box::new(handle)),
         Err(e) => {
-            eprintln!("[mpv-wrapper] Error: Failed to build MPV instance: {}", e);
+            eprintln!("[mpv-wrapper] Error: Failed to build mpv handle: {}", e);
             ptr::null_mut()
         }
     }
 }
 
-/// Destroys the mpv wrapper instance and terminates the mpv core.
+/// Destroys the mpv handle and terminates the mpv core.
 ///
-/// @param mpv A valid pointer to the Mpv wrapper instance (obtained from `mpv_wrapper_create`).
+/// @param mpv A valid pointer to the mpv handle (obtained from `mpv_wrapper_create`).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn mpv_wrapper_destroy(mpv: *mut Mpv) {
-    if !mpv.is_null() {
-        let _ = unsafe { Box::from_raw(mpv) };
+pub unsafe extern "C" fn mpv_wrapper_destroy(handle: *mut MpvHandle) {
+    if !handle.is_null() {
+        let _ = unsafe { Box::from_raw(handle) };
     }
 }
 
 /// Executes an mpv command.
 ///
-/// @param mpv A valid pointer to the Mpv wrapper instance.
+/// @param mpv A valid pointer to the mpv handle.
 /// @param name The name of the command (e.g., "set", "loadfile").
 /// @param args A JSON string representing an array of arguments (e.g., `["volume", "50"]`, `["path/to/video.mp4"]`).
 ///             Pass an empty string "[]" or NULL for no arguments.
@@ -202,16 +202,16 @@ pub unsafe extern "C" fn mpv_wrapper_destroy(mpv: *mut Mpv) {
 ///         The caller MUST free this string using `mpv_wrapper_free_string`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn mpv_wrapper_command(
-    mpv: *mut Mpv,
+    handle: *mut MpvHandle,
     name: *const c_char,
     args: *const c_char,
 ) -> *mut c_char {
     unsafe {
-        if mpv.is_null() || name.is_null() {
+        if handle.is_null() || name.is_null() {
             return FfiResponse::error("Null pointer passed for mpv or name").into_raw_json();
         }
 
-        let mpv_instance = &(*mpv);
+        let mpv_handle = &(*handle);
 
         let name_str = match CStr::from_ptr(name).to_str() {
             Ok(s) => s,
@@ -258,7 +258,7 @@ pub unsafe extern "C" fn mpv_wrapper_command(
 
         let args_str_slice: Vec<&str> = args_strings.iter().map(|s| s.as_str()).collect();
 
-        match mpv_instance.command(name_str, &args_str_slice) {
+        match mpv_handle.command(name_str, &args_str_slice) {
             Ok(_) => FfiResponse::success_null().into_raw_json(),
             Err(e) => FfiResponse::error(&format!("mpv command failed: {}", e)).into_raw_json(),
         }
@@ -284,23 +284,23 @@ fn convert_serde_to_property(value: serde_json::Value) -> Option<PropertyValue> 
 
 /// Sets an mpv property.
 ///
-/// @param mpv A valid pointer to the Mpv wrapper instance.
+/// @param mpv A valid pointer to the mpv handle.
 /// @param name The name of the property to set (e.g., "pause").
 /// @param value A JSON string representing the value (e.g., "true").
 /// @return A JSON string indicating success or failure.
 ///         The caller MUST free this string using `mpv_wrapper_free_string`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn mpv_wrapper_set_property(
-    mpv: *mut Mpv,
+    handle: *mut MpvHandle,
     name: *const c_char,
     value: *const c_char,
 ) -> *mut c_char {
     unsafe {
-        if mpv.is_null() || name.is_null() || value.is_null() {
+        if handle.is_null() || name.is_null() || value.is_null() {
             return FfiResponse::error("Null pointer passed to set_property").into_raw_json();
         }
 
-        let mpv_instance = &(*mpv);
+        let mpv_handle = &(*handle);
         let name_str = match CStr::from_ptr(name).to_str() {
             Ok(s) => s,
             Err(_) => {
@@ -327,7 +327,7 @@ pub unsafe extern "C" fn mpv_wrapper_set_property(
             }
         };
 
-        match mpv_instance.set_property(name_str, prop_value) {
+        match mpv_handle.set_property(name_str, prop_value) {
             Ok(_) => FfiResponse::success_null().into_raw_json(),
             Err(e) => FfiResponse::error(&format!("Failed to set property: {}", e)).into_raw_json(),
         }
@@ -336,23 +336,23 @@ pub unsafe extern "C" fn mpv_wrapper_set_property(
 
 /// Gets an mpv property.
 ///
-/// @param mpv A valid pointer to the Mpv wrapper instance.
+/// @param mpv A valid pointer to the mpv handle.
 /// @param name The name of the property to get.
 /// @param format The format can be "string", "flag", "int64", "double", or "node".
 /// @return A JSON string containing the property value (e.g., `{"data": true}`) or an error.
 ///         The caller MUST free this string using `mpv_wrapper_free_string`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn mpv_wrapper_get_property(
-    mpv: *mut Mpv,
+    handle: *mut MpvHandle,
     name: *const c_char,
     format: *const c_char,
 ) -> *mut c_char {
     unsafe {
-        if mpv.is_null() || name.is_null() || format.is_null() {
+        if handle.is_null() || name.is_null() || format.is_null() {
             return FfiResponse::error("Null pointer passed to get_property").into_raw_json();
         }
 
-        let mpv_instance = &(*mpv);
+        let mpv_handle = &(*handle);
 
         let name_str = match CStr::from_ptr(name).to_str() {
             Ok(s) => s,
@@ -371,7 +371,7 @@ pub unsafe extern "C" fn mpv_wrapper_get_property(
 
         let mpv_format = MpvFormat::from_str(format_str).unwrap_or(MpvFormat::Node);
 
-        match mpv_instance.get_property(name_str, mpv_format) {
+        match mpv_handle.get_property(name_str, mpv_format) {
             Ok(prop_value) => match serde_json::to_value(prop_value) {
                 Ok(data_value) => FfiResponse::success(data_value).into_raw_json(),
                 Err(e) => FfiResponse::error(&format!("Failed to serialize property value: {}", e))

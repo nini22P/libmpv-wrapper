@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Mpv Mpv;
+typedef struct MpvHandle MpvHandle;
 
 /**
  * Callback function type for mpv events.
@@ -19,62 +19,62 @@ typedef struct Mpv Mpv;
 typedef void (*EventCallback)(const char *event, void *userdata);
 
 /**
- * Creates a new mpv instance (wrapper).
+ * Creates a new mpv handle.
  *
  * @param initial_options A JSON string of initial mpv options (e.g., `{"idle": "yes"}`).
  * @param observed_properties A JSON string mapping property names to their formats (e.g., `{"pause": "flag"}`).
  *                            The format can be "string", "flag", "int64", "double", or "node".
  * @param event_callback A function pointer that will be called for mpv events.
  * @param event_userdata A user-supplied pointer that will be passed to the event_callback.
- * @return A pointer to the opaque Mpv wrapper instance, or NULL on failure.
+ * @return A pointer to the opaque mpv handle, or NULL on failure.
  */
-struct Mpv *mpv_wrapper_create(const char *initial_options,
-                               const char *observed_properties,
-                               EventCallback event_callback,
-                               void *event_userdata);
+struct MpvHandle *mpv_wrapper_create(const char *initial_options,
+                                     const char *observed_properties,
+                                     EventCallback event_callback,
+                                     void *event_userdata);
 
 /**
- * Destroys the mpv wrapper instance and terminates the mpv core.
+ * Destroys the mpv handle and terminates the mpv core.
  *
- * @param mpv A valid pointer to the Mpv wrapper instance (obtained from `mpv_wrapper_create`).
+ * @param mpv A valid pointer to the mpv handle (obtained from `mpv_wrapper_create`).
  */
-void mpv_wrapper_destroy(struct Mpv *mpv);
+void mpv_wrapper_destroy(struct MpvHandle *handle);
 
 /**
  * Executes an mpv command.
  *
- * @param mpv A valid pointer to the Mpv wrapper instance.
+ * @param mpv A valid pointer to the mpv handle.
  * @param name The name of the command (e.g., "set", "loadfile").
  * @param args A JSON string representing an array of arguments (e.g., `["volume", "50"]`, `["path/to/video.mp4"]`).
  *             Pass an empty string "[]" or NULL for no arguments.
  * @return A JSON string representing the command result (e.g., `{"data": null}` or `{"error": "..."}`).
  *         The caller MUST free this string using `mpv_wrapper_free_string`.
  */
-char *mpv_wrapper_command(struct Mpv *mpv,
+char *mpv_wrapper_command(struct MpvHandle *handle,
                           const char *name,
                           const char *args);
 
 /**
  * Sets an mpv property.
  *
- * @param mpv A valid pointer to the Mpv wrapper instance.
+ * @param mpv A valid pointer to the mpv handle.
  * @param name The name of the property to set (e.g., "pause").
  * @param value A JSON string representing the value (e.g., "true").
  * @return A JSON string indicating success or failure.
  *         The caller MUST free this string using `mpv_wrapper_free_string`.
  */
-char *mpv_wrapper_set_property(struct Mpv *mpv, const char *name, const char *value);
+char *mpv_wrapper_set_property(struct MpvHandle *handle, const char *name, const char *value);
 
 /**
  * Gets an mpv property.
  *
- * @param mpv A valid pointer to the Mpv wrapper instance.
+ * @param mpv A valid pointer to the mpv handle.
  * @param name The name of the property to get.
  * @param format The format can be "string", "flag", "int64", "double", or "node".
  * @return A JSON string containing the property value (e.g., `{"data": true}`) or an error.
  *         The caller MUST free this string using `mpv_wrapper_free_string`.
  */
-char *mpv_wrapper_get_property(struct Mpv *mpv, const char *name, const char *format);
+char *mpv_wrapper_get_property(struct MpvHandle *handle, const char *name, const char *format);
 
 /**
  * Frees a C string that was returned by one of the `mpv_wrapper_*` functions.

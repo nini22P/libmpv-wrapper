@@ -16,8 +16,8 @@ pub use self::{
     utils::error_string,
 };
 
-#[derive(Clone, Debug)]
-pub struct MpvHandle(pub(crate) *mut libmpv_sys::mpv_handle);
+#[derive(Debug)]
+pub struct MpvHandle(*mut libmpv_sys::mpv_handle);
 
 impl MpvHandle {
     pub(crate) fn inner(&self) -> *mut libmpv_sys::mpv_handle {
@@ -28,21 +28,13 @@ impl MpvHandle {
 unsafe impl Send for MpvHandle {}
 unsafe impl Sync for MpvHandle {}
 
-#[derive(Clone)]
-pub struct Mpv {
-    pub(crate) handle: MpvHandle,
-}
-
-unsafe impl Send for Mpv {}
-unsafe impl Sync for Mpv {}
-
-impl Drop for Mpv {
+impl Drop for MpvHandle {
     fn drop(&mut self) {
-        if !self.handle.inner().is_null() {
+        if !self.inner().is_null() {
             unsafe {
-                libmpv_sys::mpv_terminate_destroy(self.handle.inner());
+                libmpv_sys::mpv_terminate_destroy(self.inner());
             }
-            self.handle.0 = std::ptr::null_mut();
+            self.0 = std::ptr::null_mut();
         }
     }
 }

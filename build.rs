@@ -20,7 +20,7 @@ fn main() {
         .formatter(bindgen::Formatter::Prettyplease)
         .dynamic_library_name("LibmpvWrapper")
         .allowlist_function("mpv_wrapper_.*")
-        .allowlist_type("Mpv")
+        .allowlist_type("MpvHandle")
         .allowlist_type("EventCallback")
         .impl_debug(true)
         .generate()
