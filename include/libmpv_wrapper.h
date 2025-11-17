@@ -36,14 +36,14 @@ struct MpvHandle *mpv_wrapper_create(const char *initial_options,
 /**
  * Destroys the mpv handle and terminates the mpv core.
  *
- * @param mpv A valid pointer to the mpv handle (obtained from `mpv_wrapper_create`).
+ * @param handle A valid pointer to the mpv handle (obtained from `mpv_wrapper_create`).
  */
 void mpv_wrapper_destroy(struct MpvHandle *handle);
 
 /**
  * Executes an mpv command.
  *
- * @param mpv A valid pointer to the mpv handle.
+ * @param handle A valid pointer to the mpv handle.
  * @param name The name of the command (e.g., "set", "loadfile").
  * @param args A JSON string representing an array of arguments (e.g., `["volume", "50"]`, `["path/to/video.mp4"]`).
  *             Pass an empty string "[]" or NULL for no arguments.
@@ -57,7 +57,7 @@ char *mpv_wrapper_command(struct MpvHandle *handle,
 /**
  * Sets an mpv property.
  *
- * @param mpv A valid pointer to the mpv handle.
+ * @param handle A valid pointer to the mpv handle.
  * @param name The name of the property to set (e.g., "pause").
  * @param value A JSON string representing the value (e.g., "true").
  * @return A JSON string indicating success or failure.
@@ -68,7 +68,7 @@ char *mpv_wrapper_set_property(struct MpvHandle *handle, const char *name, const
 /**
  * Gets an mpv property.
  *
- * @param mpv A valid pointer to the mpv handle.
+ * @param handle A valid pointer to the mpv handle.
  * @param name The name of the property to get.
  * @param format The format can be "string", "flag", "int64", "double", or "node".
  * @return A JSON string containing the property value (e.g., `{"data": true}`) or an error.
