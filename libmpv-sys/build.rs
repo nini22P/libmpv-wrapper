@@ -47,12 +47,12 @@ fn generate_bindings() {
 
     println!("Running bindgen to generate Rust bindings...");
     let bindings = bindgen::Builder::default()
-        .formatter(bindgen::Formatter::Prettyplease)
         .header(wrapper_path.to_str().unwrap())
+        .formatter(bindgen::Formatter::Prettyplease)
         .clang_arg(clang_arg)
         .impl_debug(true)
-        .opaque_type("mpv_handle")
-        .opaque_type("mpv_render_context")
+        .allowlist_function("mpv_.*")
+        .allowlist_type("mpv_.*")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");

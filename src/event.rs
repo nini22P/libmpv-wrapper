@@ -1,8 +1,9 @@
-use crate::{MpvHandle, MpvNode, Result, utils::cstr_to_string};
 use libmpv_sys;
 use log::warn;
 use scopeguard::defer;
 use serde::Serialize;
+
+use crate::{MpvHandle, MpvNode, Result, utils::cstr_to_string};
 
 pub type EventHandler = Box<dyn FnMut(Event) -> Result<()> + Send + 'static>;
 

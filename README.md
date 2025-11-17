@@ -8,11 +8,11 @@ A wrapper for libmpv.
 cargo build --release
 ```
 
-## Running the tests
+## Testing
 
 ```bash
 cargo build
-cargo test -- --nocapture
+cargo test
 ```
 
 ## Credits

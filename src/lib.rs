@@ -1,5 +1,3 @@
-use libmpv_sys;
-
 mod builder;
 mod command;
 mod error;
@@ -7,6 +5,8 @@ mod event;
 mod ffi;
 mod property;
 mod utils;
+
+use libmpv_sys;
 
 pub use self::{
     builder::Builder,

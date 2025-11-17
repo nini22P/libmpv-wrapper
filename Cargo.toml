@@ -9,14 +9,24 @@ license = "LGPL-2.1"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-libmpv-sys = { path = "./libmpv-sys", default-features = false }
+libmpv-sys = { path = "./libmpv-sys", default-features = false, features = [
+  # "generate-bindings",
+] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1.0"
+serde_json = "1"
 thiserror = "2"
 log = "0.4"
 scopeguard = "1"
 indexmap = { version = "2", features = ["serde"] }
-libloading = "0.9.0"
+libloading = "0.8"
 
 [features]
 generate-bindings = ["libmpv-sys/generate-bindings"]
+
+[build-dependencies]
+cbindgen = "0.29"
+bindgen = "0.72"
+
+[profile.release]
+lto = true
+codegen-units = 1

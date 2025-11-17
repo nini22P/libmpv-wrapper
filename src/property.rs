@@ -1,11 +1,11 @@
+use indexmap::IndexMap;
 use libmpv_sys;
 use scopeguard::defer;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{convert::Infallible, ffi::CString};
 
 use crate::{Error, Mpv, Result, utils::cstr_to_string, utils::error_string};
-use indexmap::IndexMap;
-use serde::{Deserialize, Serialize};
 
 fn format_to_string(format_code: libmpv_sys::mpv_format) -> String {
     match format_code {
