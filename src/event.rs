@@ -61,6 +61,7 @@ pub fn start_event_listener(mut event_handler: EventHandler, event_listener: Eve
         if !event_listener.event_handle.inner().is_null() {
             log::debug!("Detaching event client handle...");
             unsafe { libmpv_sys::mpv_destroy(event_listener.event_handle.inner()) };
+            std::mem::forget(event_listener.event_handle);
         }
     });
 }

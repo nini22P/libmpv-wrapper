@@ -125,7 +125,8 @@ impl Builder {
             let event_listener = EventListener { event_handle };
             start_event_listener(handler, event_listener);
         } else if !event_handle.inner().is_null() {
-            unsafe { libmpv_sys::mpv_terminate_destroy(event_handle.inner()) };
+            unsafe { libmpv_sys::mpv_destroy(event_handle.inner()) };
+            std::mem::forget(event_handle);
         }
 
         std::mem::forget(self);

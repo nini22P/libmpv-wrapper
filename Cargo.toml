@@ -9,9 +9,7 @@ license = "LGPL-2.1"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-libmpv-sys = { path = "./libmpv-sys", default-features = false, features = [
-  # "generate-bindings",
-] }
+libmpv-sys = { path = "./libmpv-sys", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
