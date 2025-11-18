@@ -6,7 +6,8 @@ description = "Wrapper for libmpv"
 license = "LGPL-2.1"
 
 [lib]
-crate-type = ["cdylib", "lib"]
+name = "mpv_wrapper"
+crate-type = ["cdylib"]
 
 [dependencies]
 libmpv-sys = { path = "./libmpv-sys", default-features = false }

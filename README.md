@@ -5,13 +5,15 @@ A wrapper for libmpv.
 ## Building
 
 ```bash
-cargo build --release
+cargo install cargo-post
+cargo post build --release
 ```
 
 ## Testing
 
 ```bash
-cargo build
+cargo install cargo-post
+cargo post build
 cargo test
 ```
 

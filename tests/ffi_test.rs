@@ -1,3 +1,4 @@
+use std::env;
 use std::ffi::{CStr, CString, c_char, c_void};
 use std::sync::mpsc::{Sender, channel};
 use std::time::{Duration, Instant};
@@ -30,14 +31,31 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting FFI test...");
 
     #[cfg(target_os = "windows")]
-    let lib_name = "libmpv_wrapper.dll";
+    let lib_name = "libmpv-wrapper.dll";
     #[cfg(target_os = "macos")]
-    let lib_name = "libmpv_wrapper.dylib";
+    let lib_name = "libmpv-wrapper.dylib";
     #[cfg(target_os = "linux")]
-    let lib_name = "libmpv_wrapper.so";
+    let lib_name = "libmpv-wrapper.so";
+
+    let mut lib_path = env::current_exe()?;
+    lib_path.pop();
+    if lib_path.ends_with("deps") {
+        lib_path.pop();
+    }
+    lib_path.push(lib_name);
+
+    println!("Attempting to load library from: {:?}", lib_path);
+
+    if !lib_path.exists() {
+        return Err(format!(
+            "Library not found at: {}. Make sure you have built it with `cargo post build`.",
+            lib_path.display()
+        )
+        .into());
+    }
 
     unsafe {
-        let lib = LibmpvWrapper::new(lib_name)?;
+        let lib = LibmpvWrapper::new(lib_path)?;
 
         let (tx, rx) = channel::<serde_json::Value>();
         let event_userdata = &tx as *const _ as *mut c_void;
