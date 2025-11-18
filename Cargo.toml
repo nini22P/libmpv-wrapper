@@ -26,6 +26,9 @@ generate-bindings = ["libmpv-sys/generate-bindings"]
 cbindgen = "0.29"
 bindgen = "0.72"
 
+[package.metadata.cargo-post.dependencies]
+zip = "6"
+
 [profile.release]
 lto = true
 codegen-units = 1
