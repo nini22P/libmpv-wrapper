@@ -2,6 +2,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    Libloading(#[from] libloading::Error),
+    #[error("libmpv error: {0}")]
+    Libmpv(String),
     #[error("Failed to create mpv handle")]
     Create,
     #[error("Failed to create mpv client handle")]

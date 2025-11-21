@@ -3,7 +3,7 @@ use log::warn;
 use scopeguard::defer;
 use serde::Serialize;
 
-use crate::{MpvHandle, MpvNode, Result, utils::cstr_to_string};
+use crate::{MpvHandle, MpvNode, Result, get_lib, utils::cstr_to_string};
 
 pub type EventHandler = Box<dyn FnMut(Event) -> Result<()> + Send + 'static>;
 
@@ -13,7 +13,9 @@ pub struct EventListener {
 
 impl EventListener {
     pub fn wait_event(&self, timeout: f64) -> Option<Result<Event>> {
-        let event_ptr = unsafe { libmpv_sys::mpv_wait_event(self.event_handle.inner(), timeout) };
+        let lib = get_lib().ok()?;
+
+        let event_ptr = unsafe { lib.mpv_wait_event(self.event_handle.inner(), timeout) };
 
         if event_ptr.is_null() {
             return None;
@@ -60,7 +62,9 @@ pub fn start_event_listener(mut event_handler: EventHandler, event_listener: Eve
 
         if !event_listener.event_handle.inner().is_null() {
             log::debug!("Detaching event client handle...");
-            unsafe { libmpv_sys::mpv_destroy(event_listener.event_handle.inner()) };
+            if let Ok(lib) = get_lib() {
+                unsafe { lib.mpv_destroy(event_listener.event_handle.inner()) };
+            }
             std::mem::forget(event_listener.event_handle);
         }
     });
@@ -147,6 +151,8 @@ pub enum Event {
 
 impl Event {
     pub(crate) unsafe fn from(event: libmpv_sys::mpv_event) -> Result<Option<Self>> {
+        let lib = get_lib()?;
+
         match event.event_id {
             libmpv_sys::mpv_event_id_MPV_EVENT_SHUTDOWN => Ok(Some(Event::Shutdown)),
             libmpv_sys::mpv_event_id_MPV_EVENT_LOG_MESSAGE => {
@@ -166,7 +172,7 @@ impl Event {
                 let node_ptr = property.data as *const libmpv_sys::mpv_node;
 
                 defer! {
-                    unsafe { libmpv_sys::mpv_free_node_contents(node_ptr as *mut _) };
+                    unsafe { lib.mpv_free_node_contents(node_ptr as *mut _) };
                 }
 
                 let node = unsafe { MpvNode::from_property(property) }?;
@@ -190,7 +196,7 @@ impl Event {
                 let node_ptr = &cmd.result as *const libmpv_sys::mpv_node;
 
                 defer! {
-                    unsafe { libmpv_sys::mpv_free_node_contents(node_ptr as *mut _) };
+                    unsafe { lib.mpv_free_node_contents(node_ptr as *mut _) };
                 }
 
                 let node = unsafe { MpvNode::from_node(node_ptr) }?;

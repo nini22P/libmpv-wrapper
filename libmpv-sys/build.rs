@@ -1,5 +1,4 @@
 fn main() {
-    println!("cargo:rustc-link-lib=mpv");
     println!("cargo:rerun-if-changed=build.rs");
 
     #[cfg(feature = "generate-bindings")]
@@ -49,6 +48,7 @@ fn generate_bindings() {
     let bindings = bindgen::Builder::default()
         .header(wrapper_path.to_str().unwrap())
         .formatter(bindgen::Formatter::Prettyplease)
+        .dynamic_library_name("Libmpv")
         .clang_arg(clang_arg)
         .impl_debug(true)
         .allowlist_function("mpv_.*")

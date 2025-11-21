@@ -711,6 +711,7 @@ name = "libmpv-sys"
 version = "0.1.0"
 dependencies = [
  "bindgen",
+ "libloading",
  "reqwest",
 ]
 

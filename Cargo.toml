@@ -10,7 +10,9 @@ name = "mpv_wrapper"
 crate-type = ["cdylib"]
 
 [dependencies]
-libmpv-sys = { path = "./libmpv-sys", default-features = false }
+libmpv-sys = { path = "./libmpv-sys", default-features = false, features = [
+  # "generate-bindings",
+] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

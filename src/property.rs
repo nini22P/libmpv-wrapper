@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{convert::Infallible, ffi::CString};
 
+use crate::get_lib;
 use crate::{Error, MpvHandle, Result, utils::cstr_to_string, utils::error_string};
 
 fn format_to_string(format_code: libmpv_sys::mpv_format) -> String {
@@ -162,11 +163,13 @@ impl MpvNode {
 macro_rules! get_property_impl {
     ($fn_name:ident, $ret_type:ty, $mpv_format:expr, $data_type:ty, $converter:expr) => {
         pub fn $fn_name(&self, name: &str) -> Result<$ret_type> {
+            let lib = get_lib()?;
+
             let c_name = CString::new(name)?;
             let mut data: $data_type = Default::default();
 
             let err = unsafe {
-                libmpv_sys::mpv_get_property(
+                lib.mpv_get_property(
                     self.inner(),
                     c_name.as_ptr(),
                     $mpv_format,
@@ -192,16 +195,18 @@ macro_rules! get_property_ptr_impl {
         $ret_type:ty,
         $mpv_format:expr,
         $ptr_type:ty,
-        $free_fn:path,
+        $free_method:ident,
         $null_ret:expr,
         $converter:expr
     ) => {
         pub fn $fn_name(&self, name: &str) -> Result<$ret_type> {
+            let lib = get_lib()?;
+
             let c_name = CString::new(name)?;
             let mut data: $ptr_type = std::ptr::null_mut();
 
             let err = unsafe {
-                libmpv_sys::mpv_get_property(
+                lib.mpv_get_property(
                     self.inner(),
                     c_name.as_ptr(),
                     $mpv_format,
@@ -211,7 +216,7 @@ macro_rules! get_property_ptr_impl {
 
             defer! {
                 if !data.is_null() {
-                    unsafe { $free_fn(data as *mut _) };
+                    unsafe { lib.$free_method(data as *mut _) };
                 }
             }
 
@@ -237,7 +242,7 @@ impl MpvHandle {
         String,
         libmpv_sys::mpv_format_MPV_FORMAT_STRING,
         *mut std::os::raw::c_char,
-        libmpv_sys::mpv_free,
+        mpv_free,
         String::new(),
         |data| Ok(std::ffi::CStr::from_ptr(data)
             .to_string_lossy()
@@ -273,40 +278,38 @@ impl MpvHandle {
         MpvNode,
         libmpv_sys::mpv_format_MPV_FORMAT_NODE,
         *mut libmpv_sys::mpv_node,
-        libmpv_sys::mpv_free_node_contents,
+        mpv_free_node_contents,
         MpvNode::None,
         |data| MpvNode::from_node(data)
     );
 
     pub fn set_property(&self, name: &str, value: PropertyValue) -> Result<()> {
+        let lib = get_lib()?;
+
         let c_name = CString::new(name)?;
 
         let err = unsafe {
             match value {
                 PropertyValue::String(s) => {
                     let c_value = CString::new(s)?;
-                    libmpv_sys::mpv_set_property_string(
-                        self.inner(),
-                        c_name.as_ptr(),
-                        c_value.as_ptr(),
-                    )
+                    lib.mpv_set_property_string(self.inner(), c_name.as_ptr(), c_value.as_ptr())
                 }
                 PropertyValue::Flag(b) => {
                     let mut val: std::os::raw::c_int = if b { 1 } else { 0 };
-                    libmpv_sys::mpv_set_property(
+                    lib.mpv_set_property(
                         self.inner(),
                         c_name.as_ptr(),
                         libmpv_sys::mpv_format_MPV_FORMAT_FLAG,
                         &mut val as *mut _ as *mut _,
                     )
                 }
-                PropertyValue::Int64(mut i) => libmpv_sys::mpv_set_property(
+                PropertyValue::Int64(mut i) => lib.mpv_set_property(
                     self.inner(),
                     c_name.as_ptr(),
                     libmpv_sys::mpv_format_MPV_FORMAT_INT64,
                     &mut i as *mut _ as *mut _,
                 ),
-                PropertyValue::Double(mut f) => libmpv_sys::mpv_set_property(
+                PropertyValue::Double(mut f) => lib.mpv_set_property(
                     self.inner(),
                     c_name.as_ptr(),
                     libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,

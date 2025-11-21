@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 description = "Raw FFI bindings for libmpv"
 
+[dependencies]
+libloading = "0.8"
+
 [build-dependencies]
 bindgen = { version = "0.72", optional = true }
 reqwest = { version = "0.12", features = ["blocking"], optional = true }

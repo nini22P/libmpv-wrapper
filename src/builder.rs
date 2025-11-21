@@ -1,11 +1,11 @@
 use indexmap::IndexMap;
-use libmpv_sys;
 use log::info;
 use std::ffi::CString;
 
 use crate::{
     Error, Event, MpvFormat, MpvHandle, Result, error_string,
     event::{EventHandler, EventListener, start_event_listener},
+    get_lib,
 };
 
 pub struct Builder {
@@ -16,17 +16,19 @@ pub struct Builder {
 
 impl Builder {
     pub fn new() -> Result<Self> {
-        let handle = unsafe { libmpv_sys::mpv_create() };
+        let lib = get_lib()?;
+
+        let handle = unsafe { lib.mpv_create() };
         if handle.is_null() {
             return Err(Error::Create);
         }
 
         let event_handle = unsafe {
-            libmpv_sys::mpv_create_client(handle, CString::new("event-client").unwrap().as_ptr())
+            lib.mpv_create_client(handle, CString::new("event-client").unwrap().as_ptr())
         };
 
         if event_handle.is_null() {
-            unsafe { libmpv_sys::mpv_terminate_destroy(handle) };
+            unsafe { lib.mpv_terminate_destroy(handle) };
             return Err(Error::ClientCreation);
         }
 
@@ -38,6 +40,8 @@ impl Builder {
     }
 
     pub fn set_options(self, options: IndexMap<String, serde_json::Value>) -> Result<Self> {
+        let lib = get_lib()?;
+
         for (name, value) in options {
             let value_str = match value {
                 serde_json::Value::Bool(b) => if b { "yes" } else { "no" }.to_string(),
@@ -54,11 +58,7 @@ impl Builder {
             let c_value = CString::new(value_str)?;
 
             let err = unsafe {
-                libmpv_sys::mpv_set_option_string(
-                    self.handle.inner(),
-                    c_name.as_ptr(),
-                    c_value.as_ptr(),
-                )
+                lib.mpv_set_option_string(self.handle.inner(), c_name.as_ptr(), c_value.as_ptr())
             };
 
             if err < 0 {
@@ -72,6 +72,8 @@ impl Builder {
     }
 
     pub fn observed_properties(self, properties: IndexMap<String, MpvFormat>) -> Result<Self> {
+        let lib = get_lib()?;
+
         for (i, (name, format)) in properties.iter().enumerate() {
             let property_id = (i + 1) as u64;
 
@@ -83,7 +85,7 @@ impl Builder {
             let c_name = CString::new(name.clone())?;
 
             let err = unsafe {
-                libmpv_sys::mpv_observe_property(
+                lib.mpv_observe_property(
                     self.event_handle.inner(),
                     property_id,
                     c_name.as_ptr(),
@@ -110,7 +112,9 @@ impl Builder {
     }
 
     pub fn build(mut self) -> Result<MpvHandle> {
-        let err = unsafe { libmpv_sys::mpv_initialize(self.handle.inner()) };
+        let lib = get_lib()?;
+
+        let err = unsafe { lib.mpv_initialize(self.handle.inner()) };
         if err < 0 {
             return Err(Error::Initialize(error_string(err)));
         }
@@ -125,7 +129,7 @@ impl Builder {
             let event_listener = EventListener { event_handle };
             start_event_listener(handler, event_listener);
         } else if !event_handle.inner().is_null() {
-            unsafe { libmpv_sys::mpv_destroy(event_handle.inner()) };
+            unsafe { lib.mpv_destroy(event_handle.inner()) };
             std::mem::forget(event_handle);
         }
 
@@ -138,7 +142,9 @@ impl Builder {
 impl Drop for Builder {
     fn drop(&mut self) {
         if !self.handle.inner().is_null() {
-            unsafe { libmpv_sys::mpv_terminate_destroy(self.handle.inner()) };
+            if let Ok(lib) = get_lib() {
+                unsafe { lib.mpv_terminate_destroy(self.handle.inner()) };
+            }
         }
     }
 }

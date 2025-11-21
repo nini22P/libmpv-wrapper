@@ -1,10 +1,11 @@
-use libmpv_sys;
 use std::ffi::CString;
 
-use crate::{Error, MpvHandle, Result, utils::error_string};
+use crate::{Error, MpvHandle, Result, get_lib, utils::error_string};
 
 impl MpvHandle {
     pub fn command(&self, name: &str, args: &[&str]) -> Result<()> {
+        let lib = get_lib()?;
+
         let c_args: Vec<CString> = std::iter::once(name)
             .chain(args.iter().cloned())
             .map(CString::new)
@@ -15,7 +16,7 @@ impl MpvHandle {
             c_args.iter().map(|s| s.as_ptr()).collect();
         c_pointers.push(std::ptr::null());
 
-        let err = unsafe { libmpv_sys::mpv_command(self.inner(), c_pointers.as_mut_ptr()) };
+        let err = unsafe { lib.mpv_command(self.inner(), c_pointers.as_mut_ptr()) };
 
         if err < 0 {
             return Err(Error::Command {
