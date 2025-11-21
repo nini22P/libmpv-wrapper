@@ -2,11 +2,15 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    #[cfg(target_os = "linux")]
+    println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN");
+
+    #[cfg(target_os = "macos")]
+    println!("cargo:rustc-link-arg=-Wl,-rpath,@loader_path");
+
     println!("cargo:rerun-if-changed=src/ffi.rs");
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-
-    println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN");
 
     cbindgen::Builder::new()
         .with_crate(manifest_dir)
