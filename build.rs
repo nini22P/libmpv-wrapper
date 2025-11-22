@@ -10,12 +10,15 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src/ffi.rs");
 
+    #[cfg(feature = "generate-header")]
+    generate_header();
+
     #[cfg(feature = "generate-bindings")]
     generate_bindings();
 }
 
-#[cfg(feature = "generate-bindings")]
-fn generate_bindings() {
+#[cfg(feature = "generate-header")]
+fn generate_header() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     cbindgen::Builder::new()
@@ -26,7 +29,10 @@ fn generate_bindings() {
         .generate()
         .expect("Failed to generate C bindings using cbindgen")
         .write_to_file("include/libmpv_wrapper.h");
+}
 
+#[cfg(feature = "generate-bindings")]
+fn generate_bindings() {
     bindgen::Builder::default()
         .header("include/libmpv_wrapper.h")
         .dynamic_library_name("LibmpvWrapper")

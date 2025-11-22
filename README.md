@@ -13,7 +13,7 @@ cargo post build --release
 
 ```bash
 cargo install cargo-post
-cargo post build
+cargo post build --features=generate-bindings
 cargo test
 ```
 

@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - job_name: Windows x64
+            os: windows-2022
+
+          - job_name: Windows ARM64
+            os: windows-11-arm
+
+          - job_name: macOS Apple Silicon
+            os: macos-15
+
+          - job_name: macOS Intel
+            os: macos-15-intel
+
+          - job_name: Linux x64
+            os: ubuntu-22.04
+
+          - job_name: Linux ARM64
+            os: ubuntu-22.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-post
+        run: cargo install cargo-post
+
+      - name: Build
+        run: cargo post build --release
+
+      - name: Detect File
+        shell: bash
+        run: |
+          ZIP_PATH=$(find target/release -name "libmpv-wrapper-*.zip" -type f | head -n 1)
+
+          if [ -z "$ZIP_PATH" ]; then
+            echo "Error: No zip file found!"
+            exit 1
+          fi
+
+          FILE_NAME=$(basename "$ZIP_PATH")
+
+          ARTIFACT_NAME="${FILE_NAME%.zip}"
+
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+          echo "ZIP_PATH=$ZIP_PATH" >> $GITHUB_ENV
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ZIP_PATH }}
+          if-no-files-found: error

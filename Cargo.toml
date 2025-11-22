@@ -28,10 +28,12 @@ zip = "6"
 
 [features]
 default = [
-  "generate-bindings",
+  "generate-header",
+  # "generate-bindings",
   # "generate-sys-bindings",
 ]
-generate-bindings = ["dep:cbindgen", "dep:bindgen"]
+generate-header = ["dep:cbindgen"]
+generate-bindings = ["dep:bindgen"]
 generate-sys-bindings = ["libmpv-sys/generate-bindings"]
 
 [profile.release]

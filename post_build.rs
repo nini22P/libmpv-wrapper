@@ -98,10 +98,6 @@ fn main() {
                 out_dir.join("libmpv-wrapper.lib"),
                 "lib/libmpv-wrapper.lib".to_string(),
             ));
-            files_map.push((
-                out_dir.join("libmpv-wrapper.pdb"),
-                "debug/libmpv-wrapper.pdb".to_string(),
-            ));
         }
 
         files_map.push((
