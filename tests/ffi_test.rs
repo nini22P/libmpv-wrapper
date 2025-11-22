@@ -9,6 +9,11 @@ mod bindings {
 
 use bindings::LibmpvWrapper;
 
+pub struct EventUserData {
+    tx: Sender<serde_json::Value>,
+    free_fn: unsafe extern "C" fn(*mut c_char),
+}
+
 unsafe extern "C" fn event_callback(event: *const c_char, userdata: *mut c_void) {
     unsafe {
         if event.is_null() {
@@ -17,11 +22,13 @@ unsafe extern "C" fn event_callback(event: *const c_char, userdata: *mut c_void)
 
         let event_str = CStr::from_ptr(event).to_string_lossy();
 
-        let tx = &*(userdata as *const Sender<serde_json::Value>);
+        let EventUserData { tx, free_fn } = &*(userdata as *const EventUserData);
 
         if let Ok(event_json) = serde_json::from_str::<serde_json::Value>(&event_str) {
             let _ = tx.send(event_json);
         }
+
+        free_fn(event as *mut c_char);
     }
 }
 
@@ -57,7 +64,9 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
         let lib = LibmpvWrapper::new(lib_path)?;
 
         let (tx, rx) = channel::<serde_json::Value>();
-        let event_userdata = &tx as *const _ as *mut c_void;
+        let free_fn = lib.mpv_wrapper_free;
+        let event_userdata_box: Box<EventUserData> = Box::new(EventUserData { tx, free_fn });
+        let event_userdata = Box::into_raw(event_userdata_box) as *mut c_void;
 
         let c_initial_options = CString::new(r#"{"idle": "yes", "vo": "null"}"#)?;
         let c_observed_properties =
@@ -107,7 +116,7 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
             result_val["error"]
         );
 
-        lib.mpv_wrapper_free_string(result_ptr);
+        lib.mpv_wrapper_free(result_ptr);
 
         println!("Waiting for 'volume' = 50 event...");
         let start_cmd = Instant::now();
@@ -150,7 +159,7 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
             result_val["error"]
         );
 
-        lib.mpv_wrapper_free_string(result_ptr);
+        lib.mpv_wrapper_free(result_ptr);
 
         println!("Waiting for 'pause' = true event...");
         let start_set = Instant::now();
@@ -196,7 +205,7 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(data_val, &serde_json::Value::Bool(true));
         println!("Verified 'pause' property via get_property is true.");
 
-        lib.mpv_wrapper_free_string(result_ptr);
+        lib.mpv_wrapper_free(result_ptr);
 
         println!("Destroying mpv...");
         lib.mpv_wrapper_destroy(mpv);
@@ -220,6 +229,9 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
         }
+
+        println!("Cleaning up userdata...");
+        let _ = Box::from_raw(event_userdata as *mut EventUserData);
 
         println!("Test finished successfully!");
     }

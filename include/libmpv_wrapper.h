@@ -81,6 +81,6 @@ char *mpv_wrapper_get_property(struct MpvHandle *handle, const char *name, const
  *
  * @param s A pointer to the C string to be freed.
  */
-void mpv_wrapper_free_string(char *s);
+void mpv_wrapper_free(char *s);
 
 #endif  /* LIBMPV_WRAPPER_H */

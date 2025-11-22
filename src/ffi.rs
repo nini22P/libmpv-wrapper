@@ -147,7 +147,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
         match CString::new(event_string) {
             Ok(c_event) => {
                 let event_userdata_ptr = event_userdata_usize as *mut c_void;
-                unsafe { event_callback(c_event.as_ptr(), event_userdata_ptr) };
+                unsafe { event_callback(c_event.into_raw(), event_userdata_ptr) };
             }
             Err(e) => {
                 eprintln!(
@@ -386,7 +386,7 @@ pub unsafe extern "C" fn mpv_wrapper_get_property(
 ///
 /// @param s A pointer to the C string to be freed.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn mpv_wrapper_free_string(s: *mut c_char) {
+pub unsafe extern "C" fn mpv_wrapper_free(s: *mut c_char) {
     if !s.is_null() {
         let _ = unsafe { CString::from_raw(s) };
     }

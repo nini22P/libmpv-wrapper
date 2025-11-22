@@ -36,6 +36,7 @@ fn generate_bindings() {
     bindgen::Builder::default()
         .header("include/libmpv_wrapper.h")
         .dynamic_library_name("LibmpvWrapper")
+        .dynamic_link_require_all(true)
         .allowlist_function("mpv_wrapper_.*")
         .allowlist_type("MpvHandle")
         .allowlist_type("EventCallback")
