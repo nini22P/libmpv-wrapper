@@ -10,17 +10,16 @@ use crate::{Error, MpvHandle, Result, utils::cstr_to_string, utils::error_string
 
 fn format_to_string(format_code: libmpv_sys::mpv_format) -> String {
     match format_code {
-        libmpv_sys::mpv_format_MPV_FORMAT_NONE => "MPV_FORMAT_NONE".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_STRING => "MPV_FORMAT_STRING".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_OSD_STRING => "MPV_FORMAT_OSD_STRING".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_FLAG => "MPV_FORMAT_FLAG".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_INT64 => "MPV_FORMAT_INT64".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE => "MPV_FORMAT_DOUBLE".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_NODE => "MPV_FORMAT_NODE".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_NODE_ARRAY => "MPV_FORMAT_NODE_ARRAY".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_NODE_MAP => "MPV_FORMAT_NODE_MAP".to_string(),
-        libmpv_sys::mpv_format_MPV_FORMAT_BYTE_ARRAY => "MPV_FORMAT_BYTE_ARRAY".to_string(),
-        unknown_code => format!("Unknown format code ({})", unknown_code),
+        libmpv_sys::mpv_format::MPV_FORMAT_NONE => "MPV_FORMAT_NONE".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_STRING => "MPV_FORMAT_STRING".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_OSD_STRING => "MPV_FORMAT_OSD_STRING".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_FLAG => "MPV_FORMAT_FLAG".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_INT64 => "MPV_FORMAT_INT64".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_DOUBLE => "MPV_FORMAT_DOUBLE".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_NODE => "MPV_FORMAT_NODE".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_NODE_ARRAY => "MPV_FORMAT_NODE_ARRAY".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_NODE_MAP => "MPV_FORMAT_NODE_MAP".to_string(),
+        libmpv_sys::mpv_format::MPV_FORMAT_BYTE_ARRAY => "MPV_FORMAT_BYTE_ARRAY".to_string(),
     }
 }
 
@@ -37,11 +36,11 @@ pub enum MpvFormat {
 impl From<MpvFormat> for libmpv_sys::mpv_format {
     fn from(format: MpvFormat) -> Self {
         match format {
-            MpvFormat::String => libmpv_sys::mpv_format_MPV_FORMAT_STRING,
-            MpvFormat::Flag => libmpv_sys::mpv_format_MPV_FORMAT_FLAG,
-            MpvFormat::Int64 => libmpv_sys::mpv_format_MPV_FORMAT_INT64,
-            MpvFormat::Double => libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,
-            MpvFormat::Node => libmpv_sys::mpv_format_MPV_FORMAT_NODE,
+            MpvFormat::String => libmpv_sys::mpv_format::MPV_FORMAT_STRING,
+            MpvFormat::Flag => libmpv_sys::mpv_format::MPV_FORMAT_FLAG,
+            MpvFormat::Int64 => libmpv_sys::mpv_format::MPV_FORMAT_INT64,
+            MpvFormat::Double => libmpv_sys::mpv_format::MPV_FORMAT_DOUBLE,
+            MpvFormat::Node => libmpv_sys::mpv_format::MPV_FORMAT_NODE,
         }
     }
 }
@@ -87,20 +86,20 @@ pub enum MpvNode {
 impl MpvNode {
     pub(crate) unsafe fn from_node(node: *const libmpv_sys::mpv_node) -> Result<Self> {
         match (unsafe { *node }).format {
-            libmpv_sys::mpv_format_MPV_FORMAT_NONE => Ok(MpvNode::None),
-            libmpv_sys::mpv_format_MPV_FORMAT_STRING => {
+            libmpv_sys::mpv_format::MPV_FORMAT_NONE => Ok(MpvNode::None),
+            libmpv_sys::mpv_format::MPV_FORMAT_STRING => {
                 Ok(MpvNode::String(unsafe { cstr_to_string((*node).u.string) }))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_FLAG => {
+            libmpv_sys::mpv_format::MPV_FORMAT_FLAG => {
                 Ok(MpvNode::Flag(unsafe { (*node).u.flag } != 0))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_INT64 => {
+            libmpv_sys::mpv_format::MPV_FORMAT_INT64 => {
                 Ok(MpvNode::Int64(unsafe { (*node).u.int64 }))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE => {
+            libmpv_sys::mpv_format::MPV_FORMAT_DOUBLE => {
                 Ok(MpvNode::Double(unsafe { (*node).u.double_ }))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_NODE_ARRAY => {
+            libmpv_sys::mpv_format::MPV_FORMAT_NODE_ARRAY => {
                 let list = unsafe { &*(*node).u.list };
                 let mut vec = Vec::with_capacity(list.num as usize);
                 for i in 0..list.num {
@@ -109,7 +108,7 @@ impl MpvNode {
                 }
                 Ok(MpvNode::NodeArray(vec))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_NODE_MAP => {
+            libmpv_sys::mpv_format::MPV_FORMAT_NODE_MAP => {
                 let list = unsafe { &*(*node).u.list };
                 let mut map = IndexMap::with_capacity(list.num as usize);
                 for i in 0..list.num {
@@ -119,7 +118,7 @@ impl MpvNode {
                 }
                 Ok(MpvNode::NodeMap(map))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_BYTE_ARRAY => {
+            libmpv_sys::mpv_format::MPV_FORMAT_BYTE_ARRAY => {
                 let ba = unsafe { &*(*node).u.ba };
                 let bytes =
                     unsafe { std::slice::from_raw_parts(ba.data as *const u8, ba.size).to_vec() };
@@ -134,22 +133,22 @@ impl MpvNode {
 
     pub(crate) unsafe fn from_property(property: libmpv_sys::mpv_event_property) -> Result<Self> {
         match property.format {
-            libmpv_sys::mpv_format_MPV_FORMAT_NONE => Ok(MpvNode::None),
-            libmpv_sys::mpv_format_MPV_FORMAT_STRING
-            | libmpv_sys::mpv_format_MPV_FORMAT_OSD_STRING => {
+            libmpv_sys::mpv_format::MPV_FORMAT_NONE => Ok(MpvNode::None),
+            libmpv_sys::mpv_format::MPV_FORMAT_STRING
+            | libmpv_sys::mpv_format::MPV_FORMAT_OSD_STRING => {
                 let str_ptr = unsafe { *(property.data as *const *const std::os::raw::c_char) };
                 Ok(MpvNode::String(unsafe { cstr_to_string(str_ptr) }))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_FLAG => Ok(MpvNode::Flag(
+            libmpv_sys::mpv_format::MPV_FORMAT_FLAG => Ok(MpvNode::Flag(
                 unsafe { *(property.data as *const i32) } != 0,
             )),
-            libmpv_sys::mpv_format_MPV_FORMAT_INT64 => {
+            libmpv_sys::mpv_format::MPV_FORMAT_INT64 => {
                 Ok(MpvNode::Int64(unsafe { *(property.data as *const i64) }))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE => {
+            libmpv_sys::mpv_format::MPV_FORMAT_DOUBLE => {
                 Ok(MpvNode::Double(unsafe { *(property.data as *const f64) }))
             }
-            libmpv_sys::mpv_format_MPV_FORMAT_NODE => unsafe {
+            libmpv_sys::mpv_format::MPV_FORMAT_NODE => unsafe {
                 Self::from_node(property.data as *const libmpv_sys::mpv_node)
             },
             format => Err(Error::PropertyConversion(format!(
@@ -240,7 +239,7 @@ impl MpvHandle {
     get_property_ptr_impl!(
         get_property_string,
         String,
-        libmpv_sys::mpv_format_MPV_FORMAT_STRING,
+        libmpv_sys::mpv_format::MPV_FORMAT_STRING,
         *mut std::os::raw::c_char,
         mpv_free,
         String::new(),
@@ -252,7 +251,7 @@ impl MpvHandle {
     get_property_impl!(
         get_property_flag,
         bool,
-        libmpv_sys::mpv_format_MPV_FORMAT_FLAG,
+        libmpv_sys::mpv_format::MPV_FORMAT_FLAG,
         std::os::raw::c_int,
         |d| d != 0
     );
@@ -260,7 +259,7 @@ impl MpvHandle {
     get_property_impl!(
         get_property_int64,
         i64,
-        libmpv_sys::mpv_format_MPV_FORMAT_INT64,
+        libmpv_sys::mpv_format::MPV_FORMAT_INT64,
         i64,
         |d| d
     );
@@ -268,7 +267,7 @@ impl MpvHandle {
     get_property_impl!(
         get_property_double,
         f64,
-        libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,
+        libmpv_sys::mpv_format::MPV_FORMAT_DOUBLE,
         f64,
         |d| d
     );
@@ -276,7 +275,7 @@ impl MpvHandle {
     get_property_ptr_impl!(
         get_property_node,
         MpvNode,
-        libmpv_sys::mpv_format_MPV_FORMAT_NODE,
+        libmpv_sys::mpv_format::MPV_FORMAT_NODE,
         *mut libmpv_sys::mpv_node,
         mpv_free_node_contents,
         MpvNode::None,
@@ -299,20 +298,20 @@ impl MpvHandle {
                     lib.mpv_set_property(
                         self.inner(),
                         c_name.as_ptr(),
-                        libmpv_sys::mpv_format_MPV_FORMAT_FLAG,
+                        libmpv_sys::mpv_format::MPV_FORMAT_FLAG,
                         &mut val as *mut _ as *mut _,
                     )
                 }
                 PropertyValue::Int64(mut i) => lib.mpv_set_property(
                     self.inner(),
                     c_name.as_ptr(),
-                    libmpv_sys::mpv_format_MPV_FORMAT_INT64,
+                    libmpv_sys::mpv_format::MPV_FORMAT_INT64,
                     &mut i as *mut _ as *mut _,
                 ),
                 PropertyValue::Double(mut f) => lib.mpv_set_property(
                     self.inner(),
                     c_name.as_ptr(),
-                    libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,
+                    libmpv_sys::mpv_format::MPV_FORMAT_DOUBLE,
                     &mut f as *mut _ as *mut _,
                 ),
                 PropertyValue::Node(_) => {

@@ -5,73 +5,82 @@
 pub struct mpv_handle {
     _unused: [u8; 0],
 }
-/** No error happened (used to signal successful operation).
+#[repr(i32)]
+/** List of error codes than can be returned by API functions. 0 and positive
+ return values always mean success, negative values are always errors.*/
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_error {
+    /** No error happened (used to signal successful operation).
  Keep in mind that many API functions returning error codes can also
  return positive values, which also indicate success. API users can
  hardcode the fact that ">= 0" means success.*/
-pub const mpv_error_MPV_ERROR_SUCCESS: mpv_error = 0;
-/** The event ringbuffer is full. This means the client is choked, and can't
+    MPV_ERROR_SUCCESS = 0,
+    /** The event ringbuffer is full. This means the client is choked, and can't
  receive any events. This can happen when too many asynchronous requests
  have been made, but not answered. Probably never happens in practice,
  unless the mpv core is frozen for some reason, and the client keeps
  making asynchronous requests. (Bugs in the client API implementation
  could also trigger this, e.g. if events become "lost".)*/
-pub const mpv_error_MPV_ERROR_EVENT_QUEUE_FULL: mpv_error = -1;
-/// Memory allocation failed.
-pub const mpv_error_MPV_ERROR_NOMEM: mpv_error = -2;
-/** The mpv core wasn't configured and initialized yet. See the notes in
+    MPV_ERROR_EVENT_QUEUE_FULL = -1,
+    /// Memory allocation failed.
+    MPV_ERROR_NOMEM = -2,
+    /** The mpv core wasn't configured and initialized yet. See the notes in
  mpv_create().*/
-pub const mpv_error_MPV_ERROR_UNINITIALIZED: mpv_error = -3;
-/** Generic catch-all error if a parameter is set to an invalid or
+    MPV_ERROR_UNINITIALIZED = -3,
+    /** Generic catch-all error if a parameter is set to an invalid or
  unsupported value. This is used if there is no better error code.*/
-pub const mpv_error_MPV_ERROR_INVALID_PARAMETER: mpv_error = -4;
-/// Trying to set an option that doesn't exist.
-pub const mpv_error_MPV_ERROR_OPTION_NOT_FOUND: mpv_error = -5;
-/// Trying to set an option using an unsupported MPV_FORMAT.
-pub const mpv_error_MPV_ERROR_OPTION_FORMAT: mpv_error = -6;
-/** Setting the option failed. Typically this happens if the provided option
+    MPV_ERROR_INVALID_PARAMETER = -4,
+    /// Trying to set an option that doesn't exist.
+    MPV_ERROR_OPTION_NOT_FOUND = -5,
+    /// Trying to set an option using an unsupported MPV_FORMAT.
+    MPV_ERROR_OPTION_FORMAT = -6,
+    /** Setting the option failed. Typically this happens if the provided option
  value could not be parsed.*/
-pub const mpv_error_MPV_ERROR_OPTION_ERROR: mpv_error = -7;
-/// The accessed property doesn't exist.
-pub const mpv_error_MPV_ERROR_PROPERTY_NOT_FOUND: mpv_error = -8;
-/// Trying to set or get a property using an unsupported MPV_FORMAT.
-pub const mpv_error_MPV_ERROR_PROPERTY_FORMAT: mpv_error = -9;
-/** The property exists, but is not available. This usually happens when the
+    MPV_ERROR_OPTION_ERROR = -7,
+    /// The accessed property doesn't exist.
+    MPV_ERROR_PROPERTY_NOT_FOUND = -8,
+    /// Trying to set or get a property using an unsupported MPV_FORMAT.
+    MPV_ERROR_PROPERTY_FORMAT = -9,
+    /** The property exists, but is not available. This usually happens when the
  associated subsystem is not active, e.g. querying audio parameters while
  audio is disabled.*/
-pub const mpv_error_MPV_ERROR_PROPERTY_UNAVAILABLE: mpv_error = -10;
-/// Error setting or getting a property.
-pub const mpv_error_MPV_ERROR_PROPERTY_ERROR: mpv_error = -11;
-/// General error when running a command with mpv_command and similar.
-pub const mpv_error_MPV_ERROR_COMMAND: mpv_error = -12;
-/// Generic error on loading (usually used with mpv_event_end_file.error).
-pub const mpv_error_MPV_ERROR_LOADING_FAILED: mpv_error = -13;
-/// Initializing the audio output failed.
-pub const mpv_error_MPV_ERROR_AO_INIT_FAILED: mpv_error = -14;
-/// Initializing the video output failed.
-pub const mpv_error_MPV_ERROR_VO_INIT_FAILED: mpv_error = -15;
-/** There was no audio or video data to play. This also happens if the
+    MPV_ERROR_PROPERTY_UNAVAILABLE = -10,
+    /// Error setting or getting a property.
+    MPV_ERROR_PROPERTY_ERROR = -11,
+    /// General error when running a command with mpv_command and similar.
+    MPV_ERROR_COMMAND = -12,
+    /// Generic error on loading (usually used with mpv_event_end_file.error).
+    MPV_ERROR_LOADING_FAILED = -13,
+    /// Initializing the audio output failed.
+    MPV_ERROR_AO_INIT_FAILED = -14,
+    /// Initializing the video output failed.
+    MPV_ERROR_VO_INIT_FAILED = -15,
+    /** There was no audio or video data to play. This also happens if the
  file was recognized, but did not contain any audio or video streams,
  or no streams were selected.*/
-pub const mpv_error_MPV_ERROR_NOTHING_TO_PLAY: mpv_error = -16;
-/** When trying to load the file, the file format could not be determined,
+    MPV_ERROR_NOTHING_TO_PLAY = -16,
+    /** When trying to load the file, the file format could not be determined,
  or the file was too broken to open it.*/
-pub const mpv_error_MPV_ERROR_UNKNOWN_FORMAT: mpv_error = -17;
-/** Generic error for signaling that certain system requirements are not
+    MPV_ERROR_UNKNOWN_FORMAT = -17,
+    /** Generic error for signaling that certain system requirements are not
  fulfilled.*/
-pub const mpv_error_MPV_ERROR_UNSUPPORTED: mpv_error = -18;
-/// The API function which was called is a stub only.
-pub const mpv_error_MPV_ERROR_NOT_IMPLEMENTED: mpv_error = -19;
-/// Unspecified error.
-pub const mpv_error_MPV_ERROR_GENERIC: mpv_error = -20;
-/** List of error codes than can be returned by API functions. 0 and positive
- return values always mean success, negative values are always errors.*/
-pub type mpv_error = ::std::os::raw::c_int;
-/** Invalid. Sometimes used for empty values. This is always defined to 0,
+    MPV_ERROR_UNSUPPORTED = -18,
+    /// The API function which was called is a stub only.
+    MPV_ERROR_NOT_IMPLEMENTED = -19,
+    /// Unspecified error.
+    MPV_ERROR_GENERIC = -20,
+}
+#[repr(i32)]
+/** Data format for options and properties. The API functions to get/set
+ properties and options support multiple formats, and this enum describes
+ them.*/
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_format {
+    /** Invalid. Sometimes used for empty values. This is always defined to 0,
  so a normal 0-init of mpv_format (or e.g. mpv_node) is guaranteed to set
  this it to MPV_FORMAT_NONE (which makes some things saner as consequence).*/
-pub const mpv_format_MPV_FORMAT_NONE: mpv_format = 0;
-/** The basic type is char*. It returns the raw property string, like
+    MPV_FORMAT_NONE = 0,
+    /** The basic type is char*. It returns the raw property string, like
  using ${=property} in input.conf (see input.rst).
 
  NULL isn't an allowed value.
@@ -104,16 +113,16 @@ pub const mpv_format_MPV_FORMAT_NONE: mpv_format = 0;
 
  Or just use mpv_set_property_string().
 */
-pub const mpv_format_MPV_FORMAT_STRING: mpv_format = 1;
-/** The basic type is char*. It returns the OSD property string, like
+    MPV_FORMAT_STRING = 1,
+    /** The basic type is char*. It returns the OSD property string, like
  using ${property} in input.conf (see input.rst). In many cases, this
  is the same as the raw string, but in other cases it's formatted for
  display on OSD. It's intended to be human readable. Do not attempt to
  parse these strings.
 
  Only valid when doing read access. The rest works like MPV_FORMAT_STRING.*/
-pub const mpv_format_MPV_FORMAT_OSD_STRING: mpv_format = 2;
-/** The basic type is int. The only allowed values are 0 ("no")
+    MPV_FORMAT_OSD_STRING = 2,
+    /** The basic type is int. The only allowed values are 0 ("no")
  and 1 ("yes").
 
  Example for reading:
@@ -127,12 +136,12 @@ pub const mpv_format_MPV_FORMAT_OSD_STRING: mpv_format = 2;
 
      int flag = 1;
      mpv_set_property(ctx, "property", MPV_FORMAT_FLAG, &flag);*/
-pub const mpv_format_MPV_FORMAT_FLAG: mpv_format = 3;
-/// The basic type is int64_t.
-pub const mpv_format_MPV_FORMAT_INT64: mpv_format = 4;
-/// The basic type is double.
-pub const mpv_format_MPV_FORMAT_DOUBLE: mpv_format = 5;
-/** The type is mpv_node.
+    MPV_FORMAT_FLAG = 3,
+    /// The basic type is int64_t.
+    MPV_FORMAT_INT64 = 4,
+    /// The basic type is double.
+    MPV_FORMAT_DOUBLE = 5,
+    /** The type is mpv_node.
 
  For reading, you usually would pass a pointer to a stack-allocated
  mpv_node value to mpv, and when you're done you call
@@ -162,18 +171,15 @@ pub const mpv_format_MPV_FORMAT_DOUBLE: mpv_format = 5;
      value.format = MPV_FORMAT_STRING;
      value.u.string = "hello";
      mpv_set_property(ctx, "property", MPV_FORMAT_NODE, &value);*/
-pub const mpv_format_MPV_FORMAT_NODE: mpv_format = 6;
-/// Used with mpv_node only. Can usually not be used directly.
-pub const mpv_format_MPV_FORMAT_NODE_ARRAY: mpv_format = 7;
-/// See MPV_FORMAT_NODE_ARRAY.
-pub const mpv_format_MPV_FORMAT_NODE_MAP: mpv_format = 8;
-/** A raw, untyped byte array. Only used only with mpv_node, and only in
+    MPV_FORMAT_NODE = 6,
+    /// Used with mpv_node only. Can usually not be used directly.
+    MPV_FORMAT_NODE_ARRAY = 7,
+    /// See MPV_FORMAT_NODE_ARRAY.
+    MPV_FORMAT_NODE_MAP = 8,
+    /** A raw, untyped byte array. Only used only with mpv_node, and only in
  some very specific situations. (Some commands use it.)*/
-pub const mpv_format_MPV_FORMAT_BYTE_ARRAY: mpv_format = 9;
-/** Data format for options and properties. The API functions to get/set
- properties and options support multiple formats, and this enum describes
- them.*/
-pub type mpv_format = ::std::os::raw::c_uint;
+    MPV_FORMAT_BYTE_ARRAY = 9,
+}
 /** Generic data storage.
 
  If mpv writes this struct (e.g. via mpv_get_property()), you must not change
@@ -322,34 +328,37 @@ const _: () = {
         "Offset of field: mpv_byte_array::size",
     ][::std::mem::offset_of!(mpv_byte_array, size) - 8usize];
 };
-/// Nothing happened. Happens on timeouts or sporadic wakeups.
-pub const mpv_event_id_MPV_EVENT_NONE: mpv_event_id = 0;
-/** Happens when the player quits. The player enters a state where it tries
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_event_id {
+    /// Nothing happened. Happens on timeouts or sporadic wakeups.
+    MPV_EVENT_NONE = 0,
+    /** Happens when the player quits. The player enters a state where it tries
  to disconnect all clients. Most requests to the player will fail, and
  the client should react to this and quit with mpv_destroy() as soon as
  possible.*/
-pub const mpv_event_id_MPV_EVENT_SHUTDOWN: mpv_event_id = 1;
-/// See mpv_request_log_messages().
-pub const mpv_event_id_MPV_EVENT_LOG_MESSAGE: mpv_event_id = 2;
-/** Reply to a mpv_get_property_async() request.
+    MPV_EVENT_SHUTDOWN = 1,
+    /// See mpv_request_log_messages().
+    MPV_EVENT_LOG_MESSAGE = 2,
+    /** Reply to a mpv_get_property_async() request.
  See also mpv_event and mpv_event_property.*/
-pub const mpv_event_id_MPV_EVENT_GET_PROPERTY_REPLY: mpv_event_id = 3;
-/** Reply to a mpv_set_property_async() request.
+    MPV_EVENT_GET_PROPERTY_REPLY = 3,
+    /** Reply to a mpv_set_property_async() request.
  (Unlike MPV_EVENT_GET_PROPERTY, mpv_event_property is not used.)*/
-pub const mpv_event_id_MPV_EVENT_SET_PROPERTY_REPLY: mpv_event_id = 4;
-/** Reply to a mpv_command_async() or mpv_command_node_async() request.
+    MPV_EVENT_SET_PROPERTY_REPLY = 4,
+    /** Reply to a mpv_command_async() or mpv_command_node_async() request.
  See also mpv_event and mpv_event_command.*/
-pub const mpv_event_id_MPV_EVENT_COMMAND_REPLY: mpv_event_id = 5;
-/** Notification before playback start of a file (before the file is loaded).
+    MPV_EVENT_COMMAND_REPLY = 5,
+    /** Notification before playback start of a file (before the file is loaded).
  See also mpv_event and mpv_event_start_file.*/
-pub const mpv_event_id_MPV_EVENT_START_FILE: mpv_event_id = 6;
-/** Notification after playback end (after the file was unloaded).
+    MPV_EVENT_START_FILE = 6,
+    /** Notification after playback end (after the file was unloaded).
  See also mpv_event and mpv_event_end_file.*/
-pub const mpv_event_id_MPV_EVENT_END_FILE: mpv_event_id = 7;
-/** Notification when the file has been loaded (headers were read etc.), and
+    MPV_EVENT_END_FILE = 7,
+    /** Notification when the file has been loaded (headers were read etc.), and
  decoding starts.*/
-pub const mpv_event_id_MPV_EVENT_FILE_LOADED: mpv_event_id = 8;
-/** Idle mode was entered. In this mode, no file is played, and the playback
+    MPV_EVENT_FILE_LOADED = 8,
+    /** Idle mode was entered. In this mode, no file is played, and the playback
  core waits for new commands. (The command line player normally quits
  instead of entering idle mode, unless --idle was specified. If mpv
  was started with mpv_create(), idle mode is enabled by default.)
@@ -359,22 +368,22 @@ pub const mpv_event_id_MPV_EVENT_FILE_LOADED: mpv_event_id = 8;
              removed in the far future. As a further warning, this event
              is not necessarily sent at the right point anymore (at the
              start of the program), while the property behaves correctly.*/
-pub const mpv_event_id_MPV_EVENT_IDLE: mpv_event_id = 11;
-/** Sent every time after a video frame is displayed. Note that currently,
+    MPV_EVENT_IDLE = 11,
+    /** Sent every time after a video frame is displayed. Note that currently,
  this will be sent in lower frequency if there is no video, or playback
  is paused - but that will be removed in the future, and it will be
  restricted to video frames only.
 
  @deprecated Use mpv_observe_property() with relevant properties instead
              (such as "playback-time").*/
-pub const mpv_event_id_MPV_EVENT_TICK: mpv_event_id = 14;
-/** Triggered by the script-message input command. The command uses the
+    MPV_EVENT_TICK = 14,
+    /** Triggered by the script-message input command. The command uses the
  first argument of the command as client name (see mpv_client_name()) to
  dispatch the message, and passes along all arguments starting from the
  second argument as strings.
  See also mpv_event and mpv_event_client_message.*/
-pub const mpv_event_id_MPV_EVENT_CLIENT_MESSAGE: mpv_event_id = 16;
-/** Happens after video changed in some way. This can happen on resolution
+    MPV_EVENT_CLIENT_MESSAGE = 16,
+    /** Happens after video changed in some way. This can happen on resolution
  changes, pixel format changes, or video filter changes. The event is
  sent after the video filters and the VO are reconfigured. Applications
  embedding a mpv window should listen to this event in order to resize
@@ -382,35 +391,35 @@ pub const mpv_event_id_MPV_EVENT_CLIENT_MESSAGE: mpv_event_id = 16;
  Note that this event can happen sporadically, and you should check
  yourself whether the video parameters really changed before doing
  something expensive.*/
-pub const mpv_event_id_MPV_EVENT_VIDEO_RECONFIG: mpv_event_id = 17;
-/** Similar to MPV_EVENT_VIDEO_RECONFIG. This is relatively uninteresting,
+    MPV_EVENT_VIDEO_RECONFIG = 17,
+    /** Similar to MPV_EVENT_VIDEO_RECONFIG. This is relatively uninteresting,
  because there is no such thing as audio output embedding.*/
-pub const mpv_event_id_MPV_EVENT_AUDIO_RECONFIG: mpv_event_id = 18;
-/** Happens when a seek was initiated. Playback stops. Usually it will
+    MPV_EVENT_AUDIO_RECONFIG = 18,
+    /** Happens when a seek was initiated. Playback stops. Usually it will
  resume with MPV_EVENT_PLAYBACK_RESTART as soon as the seek is finished.*/
-pub const mpv_event_id_MPV_EVENT_SEEK: mpv_event_id = 20;
-/** There was a discontinuity of some sort (like a seek), and playback
+    MPV_EVENT_SEEK = 20,
+    /** There was a discontinuity of some sort (like a seek), and playback
  was reinitialized. Usually happens on start of playback and after
  seeking. The main purpose is allowing the client to detect when a seek
  request is finished.*/
-pub const mpv_event_id_MPV_EVENT_PLAYBACK_RESTART: mpv_event_id = 21;
-/** Event sent due to mpv_observe_property().
+    MPV_EVENT_PLAYBACK_RESTART = 21,
+    /** Event sent due to mpv_observe_property().
  See also mpv_event and mpv_event_property.*/
-pub const mpv_event_id_MPV_EVENT_PROPERTY_CHANGE: mpv_event_id = 22;
-/** Happens if the internal per-mpv_handle ringbuffer overflows, and at
+    MPV_EVENT_PROPERTY_CHANGE = 22,
+    /** Happens if the internal per-mpv_handle ringbuffer overflows, and at
  least 1 event had to be dropped. This can happen if the client doesn't
  read the event queue quickly enough with mpv_wait_event(), or if the
  client makes a very large number of asynchronous calls at once.
 
  Event delivery will continue normally once this event was returned
  (this forces the client to empty the queue completely).*/
-pub const mpv_event_id_MPV_EVENT_QUEUE_OVERFLOW: mpv_event_id = 24;
-/** Triggered if a hook handler was registered with mpv_hook_add(), and the
+    MPV_EVENT_QUEUE_OVERFLOW = 24,
+    /** Triggered if a hook handler was registered with mpv_hook_add(), and the
  hook is invoked. If you receive this, you must handle it, and continue
  the hook with mpv_hook_continue().
  See also mpv_event and mpv_event_hook.*/
-pub const mpv_event_id_MPV_EVENT_HOOK: mpv_event_id = 25;
-pub type mpv_event_id = ::std::os::raw::c_uint;
+    MPV_EVENT_HOOK = 25,
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mpv_event_property {
@@ -450,27 +459,30 @@ const _: () = {
         "Offset of field: mpv_event_property::data",
     ][::std::mem::offset_of!(mpv_event_property, data) - 16usize];
 };
-pub const mpv_log_level_MPV_LOG_LEVEL_NONE: mpv_log_level = 0;
-/// "no"    - disable absolutely all messages
-pub const mpv_log_level_MPV_LOG_LEVEL_FATAL: mpv_log_level = 10;
-/// "fatal" - critical/aborting errors
-pub const mpv_log_level_MPV_LOG_LEVEL_ERROR: mpv_log_level = 20;
-/// "error" - simple errors
-pub const mpv_log_level_MPV_LOG_LEVEL_WARN: mpv_log_level = 30;
-/// "warn"  - possible problems
-pub const mpv_log_level_MPV_LOG_LEVEL_INFO: mpv_log_level = 40;
-/// "info"  - informational message
-pub const mpv_log_level_MPV_LOG_LEVEL_V: mpv_log_level = 50;
-/// "v"     - noisy informational message
-pub const mpv_log_level_MPV_LOG_LEVEL_DEBUG: mpv_log_level = 60;
-/// "debug" - very noisy technical information
-pub const mpv_log_level_MPV_LOG_LEVEL_TRACE: mpv_log_level = 70;
+#[repr(i32)]
 /** Numeric log levels. The lower the number, the more important the message is.
  MPV_LOG_LEVEL_NONE is never used when receiving messages. The string in
  the comment after the value is the name of the log level as used for the
  mpv_request_log_messages() function.
  Unused numeric values are unused, but reserved for future use.*/
-pub type mpv_log_level = ::std::os::raw::c_uint;
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_log_level {
+    MPV_LOG_LEVEL_NONE = 0,
+    /// "no"    - disable absolutely all messages
+    MPV_LOG_LEVEL_FATAL = 10,
+    /// "fatal" - critical/aborting errors
+    MPV_LOG_LEVEL_ERROR = 20,
+    /// "error" - simple errors
+    MPV_LOG_LEVEL_WARN = 30,
+    /// "warn"  - possible problems
+    MPV_LOG_LEVEL_INFO = 40,
+    /// "info"  - informational message
+    MPV_LOG_LEVEL_V = 50,
+    /// "v"     - noisy informational message
+    MPV_LOG_LEVEL_DEBUG = 60,
+    /// "debug" - very noisy technical information
+    MPV_LOG_LEVEL_TRACE = 70,
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mpv_event_log_message {
@@ -511,30 +523,33 @@ const _: () = {
         "Offset of field: mpv_event_log_message::log_level",
     ][::std::mem::offset_of!(mpv_event_log_message, log_level) - 24usize];
 };
-/** The end of file was reached. Sometimes this may also happen on
+#[repr(i32)]
+/// Since API version 1.9.
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_end_file_reason {
+    /** The end of file was reached. Sometimes this may also happen on
  incomplete or corrupted files, or if the network connection was
  interrupted when playing a remote file. It also happens if the
  playback range was restricted with --end or --frames or similar.*/
-pub const mpv_end_file_reason_MPV_END_FILE_REASON_EOF: mpv_end_file_reason = 0;
-/// Playback was stopped by an external action (e.g. playlist controls).
-pub const mpv_end_file_reason_MPV_END_FILE_REASON_STOP: mpv_end_file_reason = 2;
-/// Playback was stopped by the quit command or player shutdown.
-pub const mpv_end_file_reason_MPV_END_FILE_REASON_QUIT: mpv_end_file_reason = 3;
-/** Some kind of error happened that lead to playback abort. Does not
+    MPV_END_FILE_REASON_EOF = 0,
+    /// Playback was stopped by an external action (e.g. playlist controls).
+    MPV_END_FILE_REASON_STOP = 2,
+    /// Playback was stopped by the quit command or player shutdown.
+    MPV_END_FILE_REASON_QUIT = 3,
+    /** Some kind of error happened that lead to playback abort. Does not
  necessarily happen on incomplete or broken files (in these cases, both
  MPV_END_FILE_REASON_ERROR or MPV_END_FILE_REASON_EOF are possible).
 
  mpv_event_end_file.error will be set.*/
-pub const mpv_end_file_reason_MPV_END_FILE_REASON_ERROR: mpv_end_file_reason = 4;
-/** The file was a playlist or similar. When the playlist is read, its
+    MPV_END_FILE_REASON_ERROR = 4,
+    /** The file was a playlist or similar. When the playlist is read, its
  entries will be appended to the playlist after the entry of the current
  file, the entry of the current file is removed, and a MPV_EVENT_END_FILE
  event is sent with reason set to MPV_END_FILE_REASON_REDIRECT. Then
  playback continues with the playlist contents.
  Since API version 1.18.*/
-pub const mpv_end_file_reason_MPV_END_FILE_REASON_REDIRECT: mpv_end_file_reason = 5;
-/// Since API version 1.9.
-pub type mpv_end_file_reason = ::std::os::raw::c_uint;
+    MPV_END_FILE_REASON_REDIRECT = 5,
+}
 /// Since API version 1.108.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -743,10 +758,17 @@ const _: () = {
 pub struct mpv_render_context {
     _unused: [u8; 0],
 }
-/** Not a valid value, but also used to terminate a params array. Its value
+#[repr(i32)]
+/** Parameters for mpv_render_param (which is used in a few places such as
+ mpv_render_context_create().
+
+ Also see mpv_render_param for conventions and how to use it.*/
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_render_param_type {
+    /** Not a valid value, but also used to terminate a params array. Its value
  is always guaranteed to be 0 (even if the ABI changes in the future).*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_INVALID: mpv_render_param_type = 0;
-/** The render API to use. Valid for mpv_render_context_create().
+    MPV_RENDER_PARAM_INVALID = 0,
+    /** The render API to use. Valid for mpv_render_context_create().
 
  Type: char*
 
@@ -759,47 +781,47 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_INVALID: mpv_render_param_type 
       It is expected that an OpenGL context is valid and "current" when
       calling mpv_render_* functions (unless specified otherwise). It
       must be the same context for the same mpv_render_context.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_API_TYPE: mpv_render_param_type = 1;
-/** Required parameters for initializing the OpenGL renderer. Valid for
+    MPV_RENDER_PARAM_API_TYPE = 1,
+    /** Required parameters for initializing the OpenGL renderer. Valid for
  mpv_render_context_create().
  Type: mpv_opengl_init_params**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_OPENGL_INIT_PARAMS: mpv_render_param_type = 2;
-/** Describes a GL render target. Valid for mpv_render_context_render().
+    MPV_RENDER_PARAM_OPENGL_INIT_PARAMS = 2,
+    /** Describes a GL render target. Valid for mpv_render_context_render().
  Type: mpv_opengl_fbo**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_OPENGL_FBO: mpv_render_param_type = 3;
-/** Control flipped rendering. Valid for mpv_render_context_render().
+    MPV_RENDER_PARAM_OPENGL_FBO = 3,
+    /** Control flipped rendering. Valid for mpv_render_context_render().
  Type: int*
  If the value is set to 0, render normally. Otherwise, render it flipped,
  which is needed e.g. when rendering to an OpenGL default framebuffer
  (which has a flipped coordinate system).*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_FLIP_Y: mpv_render_param_type = 4;
-/** Control surface depth. Valid for mpv_render_context_render().
+    MPV_RENDER_PARAM_FLIP_Y = 4,
+    /** Control surface depth. Valid for mpv_render_context_render().
  Type: int*
  This implies the depth of the surface passed to the render function in
  bits per channel. If omitted or set to 0, the renderer will assume 8.
  Typically used to control dithering.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_DEPTH: mpv_render_param_type = 5;
-/** ICC profile blob. Valid for mpv_render_context_set_parameter().
+    MPV_RENDER_PARAM_DEPTH = 5,
+    /** ICC profile blob. Valid for mpv_render_context_set_parameter().
  Type: mpv_byte_array*
  Set an ICC profile for use with the "icc-profile-auto" option. (If the
  option is not enabled, the ICC data will not be used.)*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_ICC_PROFILE: mpv_render_param_type = 6;
-/** Deprecated
+    MPV_RENDER_PARAM_ICC_PROFILE = 6,
+    /** Deprecated
  Ambient light in lux. Valid for mpv_render_context_set_parameter().
  Type: int*
  This can be used for automatic gamma correction.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_AMBIENT_LIGHT: mpv_render_param_type = 7;
-/** X11 Display, sometimes used for hwdec. Valid for
+    MPV_RENDER_PARAM_AMBIENT_LIGHT = 7,
+    /** X11 Display, sometimes used for hwdec. Valid for
  mpv_render_context_create(). The Display must stay valid for the lifetime
  of the mpv_render_context.
  Type: Display**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_X11_DISPLAY: mpv_render_param_type = 8;
-/** Wayland display, sometimes used for hwdec. Valid for
+    MPV_RENDER_PARAM_X11_DISPLAY = 8,
+    /** Wayland display, sometimes used for hwdec. Valid for
  mpv_render_context_create(). The wl_display must stay valid for the
  lifetime of the mpv_render_context.
  Type: struct wl_display**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_WL_DISPLAY: mpv_render_param_type = 9;
-/** Better control about rendering and enabling some advanced features. Valid
+    MPV_RENDER_PARAM_WL_DISPLAY = 9,
+    /** Better control about rendering and enabling some advanced features. Valid
  for mpv_render_context_create().
 
  This conflates multiple requirements the API user promises to abide if
@@ -836,8 +858,8 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_WL_DISPLAY: mpv_render_param_ty
           violating these rules fatal.
 
  Type: int*: 0 for disable (default), 1 for enable*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_ADVANCED_CONTROL: mpv_render_param_type = 10;
-/** Return information about the next frame to render. Valid for
+    MPV_RENDER_PARAM_ADVANCED_CONTROL = 10,
+    /** Return information about the next frame to render. Valid for
  mpv_render_context_get_info().
 
  Type: mpv_render_frame_info*
@@ -847,8 +869,8 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_ADVANCED_CONTROL: mpv_render_pa
  MPV_RENDER_UPDATE_FRAME set, and the user is supposed to call
  mpv_render_context_render(). If there is no next frame, then the
  return value will have is_valid set to 0.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_NEXT_FRAME_INFO: mpv_render_param_type = 11;
-/** Enable or disable video timing. Valid for mpv_render_context_render().
+    MPV_RENDER_PARAM_NEXT_FRAME_INFO = 11,
+    /** Enable or disable video timing. Valid for mpv_render_context_render().
 
  Type: int*: 0 for disable, 1 for enable (default)
 
@@ -862,8 +884,8 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_NEXT_FRAME_INFO: mpv_render_par
 
  Disabling this without doing anything in addition will result in A/V sync
  being slightly off.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME: mpv_render_param_type = 12;
-/** Use to skip rendering in mpv_render_context_render().
+    MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME = 12,
+    /** Use to skip rendering in mpv_render_context_render().
 
  Type: int*: 0 for rendering (default), 1 for skipping
 
@@ -876,27 +898,27 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME: mpv_rend
  rendered. All other normal rules also apply, for example about whether
  you have to call mpv_render_context_report_swap(). It also does timing
  in the same way.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_SKIP_RENDERING: mpv_render_param_type = 13;
-/** Deprecated. Not supported. Use MPV_RENDER_PARAM_DRM_DISPLAY_V2 instead.
+    MPV_RENDER_PARAM_SKIP_RENDERING = 13,
+    /** Deprecated. Not supported. Use MPV_RENDER_PARAM_DRM_DISPLAY_V2 instead.
  Type : struct mpv_opengl_drm_params**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_DRM_DISPLAY: mpv_render_param_type = 14;
-/** DRM draw surface size, contains draw surface dimensions.
+    MPV_RENDER_PARAM_DRM_DISPLAY = 14,
+    /** DRM draw surface size, contains draw surface dimensions.
  Valid for mpv_render_context_create().
  Type : struct mpv_opengl_drm_draw_surface_size**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE: mpv_render_param_type = 15;
-/** DRM display, contains drm display handles.
+    MPV_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE = 15,
+    /** DRM display, contains drm display handles.
  Valid for mpv_render_context_create().
  Type : struct mpv_opengl_drm_params_v2**/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_DRM_DISPLAY_V2: mpv_render_param_type = 16;
-/** MPV_RENDER_API_TYPE_SW only: rendering target surface size, mandatory.
+    MPV_RENDER_PARAM_DRM_DISPLAY_V2 = 16,
+    /** MPV_RENDER_API_TYPE_SW only: rendering target surface size, mandatory.
  Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
  Type: int[2] (e.g.: int s[2] = {w, h}; param.data = &s[0];)
 
  The video frame is transformed as with other VOs. Typically, this means
  the video gets scaled and black bars are added if the video size or
  aspect ratio mismatches with the target size.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_SIZE: mpv_render_param_type = 17;
-/** MPV_RENDER_API_TYPE_SW only: rendering target surface pixel format,
+    MPV_RENDER_PARAM_SW_SIZE = 17,
+    /** MPV_RENDER_API_TYPE_SW only: rendering target surface pixel format,
  mandatory.
  Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
  Type: char* (e.g.: char *f = "rgb0"; param.data = f;)
@@ -918,8 +940,8 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_SIZE: mpv_render_param_type 
       names, as long as it's internally marked as RGB, has exactly 1
       plane, and is supported as conversion output. It is not a good idea
       to rely on any of these. Their semantics and handling could change.*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_FORMAT: mpv_render_param_type = 18;
-/** MPV_RENDER_API_TYPE_SW only: rendering target surface bytes per line,
+    MPV_RENDER_PARAM_SW_FORMAT = 18,
+    /** MPV_RENDER_API_TYPE_SW only: rendering target surface bytes per line,
  mandatory.
  Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
  Type: size_t*
@@ -937,8 +959,8 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_FORMAT: mpv_render_param_typ
  pixel alignment size. Otherwise, crashes and undefined behavior is
  possible on platforms which do not support unaligned accesses (either
  through normal memory access or aligned SIMD memory access instructions).*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_STRIDE: mpv_render_param_type = 19;
-/** MPV_RENDER_API_TYPE_SW only: rendering target surface bytes per line,
+    MPV_RENDER_PARAM_SW_STRIDE = 19,
+    /** MPV_RENDER_API_TYPE_SW only: rendering target surface bytes per line,
  mandatory.
  Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
  Type: size_t*
@@ -956,12 +978,8 @@ pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_STRIDE: mpv_render_param_typ
  pixel alignment size. Otherwise, crashes and undefined behavior is
  possible on platforms which do not support unaligned accesses (either
  through normal memory access or aligned SIMD memory access instructions).*/
-pub const mpv_render_param_type_MPV_RENDER_PARAM_SW_POINTER: mpv_render_param_type = 20;
-/** Parameters for mpv_render_param (which is used in a few places such as
- mpv_render_context_create().
-
- Also see mpv_render_param for conventions and how to use it.*/
-pub type mpv_render_param_type = ::std::os::raw::c_uint;
+    MPV_RENDER_PARAM_SW_POINTER = 20,
+}
 /** Used to pass arbitrary parameters to some mpv_render_* functions. The
  meaning of the data parameter is determined by the type, and each
  MPV_RENDER_PARAM_* documents what type the value must point to.
@@ -1004,7 +1022,11 @@ const _: () = {
         "Offset of field: mpv_render_param::data",
     ][::std::mem::offset_of!(mpv_render_param, data) - 8usize];
 };
-/** Set if there is actually a next frame. If unset, there is no next frame
+#[repr(i32)]
+/// Flags used in mpv_render_frame_info.flags. Each value represents a bit in it.
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_render_frame_info_flag {
+    /** Set if there is actually a next frame. If unset, there is no next frame
  yet, and other flags and fields that require a frame to be queued will
  be unset.
 
@@ -1017,8 +1039,8 @@ const _: () = {
  If the return value of mpv_render_context_render() had the
  MPV_RENDER_UPDATE_FRAME flag set, this flag will usually be set as well,
  unless the frame is rendered, or discarded by other asynchronous events.*/
-pub const mpv_render_frame_info_flag_MPV_RENDER_FRAME_INFO_PRESENT: mpv_render_frame_info_flag = 1;
-/** If set, the frame is not an actual new video frame, but a redraw request.
+    MPV_RENDER_FRAME_INFO_PRESENT = 1,
+    /** If set, the frame is not an actual new video frame, but a redraw request.
  For example if the video is paused, and an option that affects video
  rendering was changed (or any other reason), an update request can be
  issued and this flag will be set.
@@ -1026,21 +1048,20 @@ pub const mpv_render_frame_info_flag_MPV_RENDER_FRAME_INFO_PRESENT: mpv_render_f
  Typically, redraw frames will not be subject to video timing.
 
  Implies MPV_RENDER_FRAME_INFO_PRESENT.*/
-pub const mpv_render_frame_info_flag_MPV_RENDER_FRAME_INFO_REDRAW: mpv_render_frame_info_flag = 2;
-/** If set, this is supposed to reproduce the previous frame perfectly. This
+    MPV_RENDER_FRAME_INFO_REDRAW = 2,
+    /** If set, this is supposed to reproduce the previous frame perfectly. This
  is usually used for certain "video-sync" options ("display-..." modes).
  Typically the renderer will blit the video from a FBO. Unset otherwise.
 
  Implies MPV_RENDER_FRAME_INFO_PRESENT.*/
-pub const mpv_render_frame_info_flag_MPV_RENDER_FRAME_INFO_REPEAT: mpv_render_frame_info_flag = 4;
-/** If set, the player timing code expects that the user thread blocks on
+    MPV_RENDER_FRAME_INFO_REPEAT = 4,
+    /** If set, the player timing code expects that the user thread blocks on
  vsync (by either delaying the render call, or by making a call to
  mpv_render_context_report_swap() at vsync time).
 
  Implies MPV_RENDER_FRAME_INFO_PRESENT.*/
-pub const mpv_render_frame_info_flag_MPV_RENDER_FRAME_INFO_BLOCK_VSYNC: mpv_render_frame_info_flag = 8;
-/// Flags used in mpv_render_frame_info.flags. Each value represents a bit in it.
-pub type mpv_render_frame_info_flag = ::std::os::raw::c_uint;
+    MPV_RENDER_FRAME_INFO_BLOCK_VSYNC = 8,
+}
 /** Information about the next video frame that will be rendered. Can be
  retrieved with MPV_RENDER_PARAM_NEXT_FRAME_INFO.*/
 #[repr(C)]
@@ -1077,12 +1098,15 @@ const _: () = {
 pub type mpv_render_update_fn = ::std::option::Option<
     unsafe extern "C" fn(cb_ctx: *mut ::std::os::raw::c_void),
 >;
-/** A new video frame must be rendered. mpv_render_context_render() must be
- called.*/
-pub const mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME: mpv_render_update_flag = 1;
+#[repr(i32)]
 /** Flags returned by mpv_render_context_update(). Each value represents a bit
  in the function's return value.*/
-pub type mpv_render_update_flag = ::std::os::raw::c_uint;
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum mpv_render_update_flag {
+    /** A new video frame must be rendered. mpv_render_context_render() must be
+ called.*/
+    MPV_RENDER_UPDATE_FRAME = 1,
+}
 /** Flags returned by mpv_render_context_update(). Each value represents a bit
  in the function's return value.*/
 pub use self::mpv_render_update_flag as mpv_render_context_flag;
@@ -1761,123 +1785,158 @@ impl Libmpv {
     where
         P: AsRef<::std::ffi::OsStr>,
     {
-        let library = ::libloading::Library::new(path)?;
-        Self::from_library(library)
+        let library = unsafe { ::libloading::Library::new(path) }?;
+        unsafe { Self::from_library(library) }
     }
     pub unsafe fn from_library<L>(library: L) -> Result<Self, ::libloading::Error>
     where
         L: Into<::libloading::Library>,
     {
         let __library = library.into();
-        let mpv_client_api_version = __library
-            .get(b"mpv_client_api_version\0")
+        let mpv_client_api_version = unsafe {
+            __library.get(b"mpv_client_api_version\0")
+        }
             .map(|sym| *sym);
-        let mpv_error_string = __library.get(b"mpv_error_string\0").map(|sym| *sym);
-        let mpv_free = __library.get(b"mpv_free\0").map(|sym| *sym);
-        let mpv_client_name = __library.get(b"mpv_client_name\0").map(|sym| *sym);
-        let mpv_client_id = __library.get(b"mpv_client_id\0").map(|sym| *sym);
-        let mpv_create = __library.get(b"mpv_create\0").map(|sym| *sym);
-        let mpv_initialize = __library.get(b"mpv_initialize\0").map(|sym| *sym);
-        let mpv_destroy = __library.get(b"mpv_destroy\0").map(|sym| *sym);
-        let mpv_terminate_destroy = __library
-            .get(b"mpv_terminate_destroy\0")
+        let mpv_error_string = unsafe { __library.get(b"mpv_error_string\0") }
             .map(|sym| *sym);
-        let mpv_create_client = __library.get(b"mpv_create_client\0").map(|sym| *sym);
-        let mpv_create_weak_client = __library
-            .get(b"mpv_create_weak_client\0")
+        let mpv_free = unsafe { __library.get(b"mpv_free\0") }.map(|sym| *sym);
+        let mpv_client_name = unsafe { __library.get(b"mpv_client_name\0") }
             .map(|sym| *sym);
-        let mpv_load_config_file = __library
-            .get(b"mpv_load_config_file\0")
+        let mpv_client_id = unsafe { __library.get(b"mpv_client_id\0") }.map(|sym| *sym);
+        let mpv_create = unsafe { __library.get(b"mpv_create\0") }.map(|sym| *sym);
+        let mpv_initialize = unsafe { __library.get(b"mpv_initialize\0") }
             .map(|sym| *sym);
-        let mpv_get_time_ns = __library.get(b"mpv_get_time_ns\0").map(|sym| *sym);
-        let mpv_get_time_us = __library.get(b"mpv_get_time_us\0").map(|sym| *sym);
-        let mpv_free_node_contents = __library
-            .get(b"mpv_free_node_contents\0")
+        let mpv_destroy = unsafe { __library.get(b"mpv_destroy\0") }.map(|sym| *sym);
+        let mpv_terminate_destroy = unsafe { __library.get(b"mpv_terminate_destroy\0") }
             .map(|sym| *sym);
-        let mpv_set_option = __library.get(b"mpv_set_option\0").map(|sym| *sym);
-        let mpv_set_option_string = __library
-            .get(b"mpv_set_option_string\0")
+        let mpv_create_client = unsafe { __library.get(b"mpv_create_client\0") }
             .map(|sym| *sym);
-        let mpv_command = __library.get(b"mpv_command\0").map(|sym| *sym);
-        let mpv_command_node = __library.get(b"mpv_command_node\0").map(|sym| *sym);
-        let mpv_command_ret = __library.get(b"mpv_command_ret\0").map(|sym| *sym);
-        let mpv_command_string = __library.get(b"mpv_command_string\0").map(|sym| *sym);
-        let mpv_command_async = __library.get(b"mpv_command_async\0").map(|sym| *sym);
-        let mpv_command_node_async = __library
-            .get(b"mpv_command_node_async\0")
+        let mpv_create_weak_client = unsafe {
+            __library.get(b"mpv_create_weak_client\0")
+        }
             .map(|sym| *sym);
-        let mpv_abort_async_command = __library
-            .get(b"mpv_abort_async_command\0")
+        let mpv_load_config_file = unsafe { __library.get(b"mpv_load_config_file\0") }
             .map(|sym| *sym);
-        let mpv_set_property = __library.get(b"mpv_set_property\0").map(|sym| *sym);
-        let mpv_set_property_string = __library
-            .get(b"mpv_set_property_string\0")
+        let mpv_get_time_ns = unsafe { __library.get(b"mpv_get_time_ns\0") }
             .map(|sym| *sym);
-        let mpv_del_property = __library.get(b"mpv_del_property\0").map(|sym| *sym);
-        let mpv_set_property_async = __library
-            .get(b"mpv_set_property_async\0")
+        let mpv_get_time_us = unsafe { __library.get(b"mpv_get_time_us\0") }
             .map(|sym| *sym);
-        let mpv_get_property = __library.get(b"mpv_get_property\0").map(|sym| *sym);
-        let mpv_get_property_string = __library
-            .get(b"mpv_get_property_string\0")
+        let mpv_free_node_contents = unsafe {
+            __library.get(b"mpv_free_node_contents\0")
+        }
             .map(|sym| *sym);
-        let mpv_get_property_osd_string = __library
-            .get(b"mpv_get_property_osd_string\0")
+        let mpv_set_option = unsafe { __library.get(b"mpv_set_option\0") }
             .map(|sym| *sym);
-        let mpv_get_property_async = __library
-            .get(b"mpv_get_property_async\0")
+        let mpv_set_option_string = unsafe { __library.get(b"mpv_set_option_string\0") }
             .map(|sym| *sym);
-        let mpv_observe_property = __library
-            .get(b"mpv_observe_property\0")
+        let mpv_command = unsafe { __library.get(b"mpv_command\0") }.map(|sym| *sym);
+        let mpv_command_node = unsafe { __library.get(b"mpv_command_node\0") }
             .map(|sym| *sym);
-        let mpv_unobserve_property = __library
-            .get(b"mpv_unobserve_property\0")
+        let mpv_command_ret = unsafe { __library.get(b"mpv_command_ret\0") }
             .map(|sym| *sym);
-        let mpv_event_name = __library.get(b"mpv_event_name\0").map(|sym| *sym);
-        let mpv_event_to_node = __library.get(b"mpv_event_to_node\0").map(|sym| *sym);
-        let mpv_request_event = __library.get(b"mpv_request_event\0").map(|sym| *sym);
-        let mpv_request_log_messages = __library
-            .get(b"mpv_request_log_messages\0")
+        let mpv_command_string = unsafe { __library.get(b"mpv_command_string\0") }
             .map(|sym| *sym);
-        let mpv_wait_event = __library.get(b"mpv_wait_event\0").map(|sym| *sym);
-        let mpv_wakeup = __library.get(b"mpv_wakeup\0").map(|sym| *sym);
-        let mpv_set_wakeup_callback = __library
-            .get(b"mpv_set_wakeup_callback\0")
+        let mpv_command_async = unsafe { __library.get(b"mpv_command_async\0") }
             .map(|sym| *sym);
-        let mpv_wait_async_requests = __library
-            .get(b"mpv_wait_async_requests\0")
+        let mpv_command_node_async = unsafe {
+            __library.get(b"mpv_command_node_async\0")
+        }
             .map(|sym| *sym);
-        let mpv_hook_add = __library.get(b"mpv_hook_add\0").map(|sym| *sym);
-        let mpv_hook_continue = __library.get(b"mpv_hook_continue\0").map(|sym| *sym);
-        let mpv_get_wakeup_pipe = __library
-            .get(b"mpv_get_wakeup_pipe\0")
+        let mpv_abort_async_command = unsafe {
+            __library.get(b"mpv_abort_async_command\0")
+        }
             .map(|sym| *sym);
-        let mpv_render_context_create = __library
-            .get(b"mpv_render_context_create\0")
+        let mpv_set_property = unsafe { __library.get(b"mpv_set_property\0") }
             .map(|sym| *sym);
-        let mpv_render_context_set_parameter = __library
-            .get(b"mpv_render_context_set_parameter\0")
+        let mpv_set_property_string = unsafe {
+            __library.get(b"mpv_set_property_string\0")
+        }
             .map(|sym| *sym);
-        let mpv_render_context_get_info = __library
-            .get(b"mpv_render_context_get_info\0")
+        let mpv_del_property = unsafe { __library.get(b"mpv_del_property\0") }
             .map(|sym| *sym);
-        let mpv_render_context_set_update_callback = __library
-            .get(b"mpv_render_context_set_update_callback\0")
+        let mpv_set_property_async = unsafe {
+            __library.get(b"mpv_set_property_async\0")
+        }
             .map(|sym| *sym);
-        let mpv_render_context_update = __library
-            .get(b"mpv_render_context_update\0")
+        let mpv_get_property = unsafe { __library.get(b"mpv_get_property\0") }
             .map(|sym| *sym);
-        let mpv_render_context_render = __library
-            .get(b"mpv_render_context_render\0")
+        let mpv_get_property_string = unsafe {
+            __library.get(b"mpv_get_property_string\0")
+        }
             .map(|sym| *sym);
-        let mpv_render_context_report_swap = __library
-            .get(b"mpv_render_context_report_swap\0")
+        let mpv_get_property_osd_string = unsafe {
+            __library.get(b"mpv_get_property_osd_string\0")
+        }
             .map(|sym| *sym);
-        let mpv_render_context_free = __library
-            .get(b"mpv_render_context_free\0")
+        let mpv_get_property_async = unsafe {
+            __library.get(b"mpv_get_property_async\0")
+        }
             .map(|sym| *sym);
-        let mpv_stream_cb_add_ro = __library
-            .get(b"mpv_stream_cb_add_ro\0")
+        let mpv_observe_property = unsafe { __library.get(b"mpv_observe_property\0") }
+            .map(|sym| *sym);
+        let mpv_unobserve_property = unsafe {
+            __library.get(b"mpv_unobserve_property\0")
+        }
+            .map(|sym| *sym);
+        let mpv_event_name = unsafe { __library.get(b"mpv_event_name\0") }
+            .map(|sym| *sym);
+        let mpv_event_to_node = unsafe { __library.get(b"mpv_event_to_node\0") }
+            .map(|sym| *sym);
+        let mpv_request_event = unsafe { __library.get(b"mpv_request_event\0") }
+            .map(|sym| *sym);
+        let mpv_request_log_messages = unsafe {
+            __library.get(b"mpv_request_log_messages\0")
+        }
+            .map(|sym| *sym);
+        let mpv_wait_event = unsafe { __library.get(b"mpv_wait_event\0") }
+            .map(|sym| *sym);
+        let mpv_wakeup = unsafe { __library.get(b"mpv_wakeup\0") }.map(|sym| *sym);
+        let mpv_set_wakeup_callback = unsafe {
+            __library.get(b"mpv_set_wakeup_callback\0")
+        }
+            .map(|sym| *sym);
+        let mpv_wait_async_requests = unsafe {
+            __library.get(b"mpv_wait_async_requests\0")
+        }
+            .map(|sym| *sym);
+        let mpv_hook_add = unsafe { __library.get(b"mpv_hook_add\0") }.map(|sym| *sym);
+        let mpv_hook_continue = unsafe { __library.get(b"mpv_hook_continue\0") }
+            .map(|sym| *sym);
+        let mpv_get_wakeup_pipe = unsafe { __library.get(b"mpv_get_wakeup_pipe\0") }
+            .map(|sym| *sym);
+        let mpv_render_context_create = unsafe {
+            __library.get(b"mpv_render_context_create\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_set_parameter = unsafe {
+            __library.get(b"mpv_render_context_set_parameter\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_get_info = unsafe {
+            __library.get(b"mpv_render_context_get_info\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_set_update_callback = unsafe {
+            __library.get(b"mpv_render_context_set_update_callback\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_update = unsafe {
+            __library.get(b"mpv_render_context_update\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_render = unsafe {
+            __library.get(b"mpv_render_context_render\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_report_swap = unsafe {
+            __library.get(b"mpv_render_context_report_swap\0")
+        }
+            .map(|sym| *sym);
+        let mpv_render_context_free = unsafe {
+            __library.get(b"mpv_render_context_free\0")
+        }
+            .map(|sym| *sym);
+        let mpv_stream_cb_add_ro = unsafe { __library.get(b"mpv_stream_cb_add_ro\0") }
             .map(|sym| *sym);
         Ok(Libmpv {
             __library,
@@ -1939,7 +1998,12 @@ impl Libmpv {
     }
     /// Return the MPV_CLIENT_API_VERSION the mpv source has been compiled with.
     pub unsafe fn mpv_client_api_version(&self) -> ::std::os::raw::c_ulong {
-        (self.mpv_client_api_version.as_ref().expect("Expected function, got error."))()
+        unsafe {
+            (self
+                .mpv_client_api_version
+                .as_ref()
+                .expect("Expected function, got error."))()
+        }
     }
     /** Return a string describing the error. For unknown errors, the string
  "unknown error" is returned.
@@ -1951,7 +2015,12 @@ impl Libmpv {
         &self,
         error: ::std::os::raw::c_int,
     ) -> *const ::std::os::raw::c_char {
-        (self.mpv_error_string.as_ref().expect("Expected function, got error."))(error)
+        unsafe {
+            (self
+                .mpv_error_string
+                .as_ref()
+                .expect("Expected function, got error."))(error)
+        }
     }
     /** General function to deallocate memory returned by some of the API functions.
  Call this only if it's explicitly documented as allowed. Calling this on
@@ -1959,7 +2028,7 @@ impl Libmpv {
 
  @param data A valid pointer returned by the API, or NULL.*/
     pub unsafe fn mpv_free(&self, data: *mut ::std::os::raw::c_void) {
-        (self.mpv_free.as_ref().expect("Expected function, got error."))(data)
+        unsafe { (self.mpv_free.as_ref().expect("Expected function, got error."))(data) }
     }
     /** Return the name of this client handle. Every client has its own unique
  name, which is mostly used for user interface purposes.
@@ -1970,7 +2039,9 @@ impl Libmpv {
         &self,
         ctx: *mut mpv_handle,
     ) -> *const ::std::os::raw::c_char {
-        (self.mpv_client_name.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_client_name.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /** Return the ID of this client handle. Every client has its own unique ID. This
  ID is never reused by the core, even if the mpv_handle at hand gets destroyed
@@ -1986,7 +2057,9 @@ impl Libmpv {
 
  @return The client ID.*/
     pub unsafe fn mpv_client_id(&self, ctx: *mut mpv_handle) -> i64 {
-        (self.mpv_client_id.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_client_id.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /** Create a new mpv instance and an associated client API handle to control
  the mpv instance. This instance is in a pre-initialized state,
@@ -2041,7 +2114,7 @@ impl Libmpv {
          - out of memory
          - LC_NUMERIC is not set to "C" (see general remarks)*/
     pub unsafe fn mpv_create(&self) -> *mut mpv_handle {
-        (self.mpv_create.as_ref().expect("Expected function, got error."))()
+        unsafe { (self.mpv_create.as_ref().expect("Expected function, got error."))() }
     }
     /** Initialize an uninitialized mpv instance. If the mpv instance is already
  running, an error is returned.
@@ -2062,7 +2135,9 @@ impl Libmpv {
 
  @return error code*/
     pub unsafe fn mpv_initialize(&self, ctx: *mut mpv_handle) -> ::std::os::raw::c_int {
-        (self.mpv_initialize.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_initialize.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /** Disconnect and destroy the mpv_handle. ctx will be deallocated with this
  API call.
@@ -2073,7 +2148,9 @@ impl Libmpv {
  be sent MPV_EVENT_SHUTDOWN. This function may block until these clients
  have responded to the shutdown event, and the core is finally destroyed.*/
     pub unsafe fn mpv_destroy(&self, ctx: *mut mpv_handle) {
-        (self.mpv_destroy.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_destroy.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /** Similar to mpv_destroy(), but brings the player and all clients down
  as well, and waits until all of them are destroyed. This function blocks. The
@@ -2099,10 +2176,12 @@ impl Libmpv {
   this function will merely send a quit command and then call
   mpv_destroy(), without waiting for the actual shutdown.*/
     pub unsafe fn mpv_terminate_destroy(&self, ctx: *mut mpv_handle) {
-        (self
-            .mpv_terminate_destroy
-            .as_ref()
-            .expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self
+                .mpv_terminate_destroy
+                .as_ref()
+                .expect("Expected function, got error."))(ctx)
+        }
     }
     /** Create a new client handle connected to the same player core as ctx. This
  context has its own event queue, its own mpv_request_event() state, its own
@@ -2131,10 +2210,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         name: *const ::std::os::raw::c_char,
     ) -> *mut mpv_handle {
-        (self
-            .mpv_create_client
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name)
+        unsafe {
+            (self
+                .mpv_create_client
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name)
+        }
     }
     /** This is the same as mpv_create_client(), but the created mpv_handle is
  treated as a weak reference. If all mpv_handles referencing a core are
@@ -2151,10 +2232,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         name: *const ::std::os::raw::c_char,
     ) -> *mut mpv_handle {
-        (self
-            .mpv_create_weak_client
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name)
+        unsafe {
+            (self
+                .mpv_create_weak_client
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name)
+        }
     }
     /** Load a config file. This loads and parses the file, and sets every entry in
  the config file's default section as if mpv_set_option_string() is called.
@@ -2177,10 +2260,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         filename: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_load_config_file
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, filename)
+        unsafe {
+            (self
+                .mpv_load_config_file
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, filename)
+        }
     }
     /** Return the internal time in nanoseconds. This has an arbitrary start offset,
  but will never wrap or go backwards.
@@ -2195,11 +2280,15 @@ impl Libmpv {
 
  Safe to be called from mpv render API threads.*/
     pub unsafe fn mpv_get_time_ns(&self, ctx: *mut mpv_handle) -> i64 {
-        (self.mpv_get_time_ns.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_get_time_ns.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /// Same as mpv_get_time_ns but in microseconds.
     pub unsafe fn mpv_get_time_us(&self, ctx: *mut mpv_handle) -> i64 {
-        (self.mpv_get_time_us.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_get_time_us.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /** Frees any data referenced by the node. It doesn't free the node itself.
  Call this only if the mpv client API set the node. If you constructed the
@@ -2210,10 +2299,12 @@ impl Libmpv {
  be called. (This is just a clarification that there's no danger of anything
  strange happening in these cases.)*/
     pub unsafe fn mpv_free_node_contents(&self, node: *mut mpv_node) {
-        (self
-            .mpv_free_node_contents
-            .as_ref()
-            .expect("Expected function, got error."))(node)
+        unsafe {
+            (self
+                .mpv_free_node_contents
+                .as_ref()
+                .expect("Expected function, got error."))(node)
+        }
     }
     /** Set an option. Note that you can't normally set options during runtime. It
  works in uninitialized state (see mpv_create()), and in some cases in at
@@ -2244,10 +2335,12 @@ impl Libmpv {
         format: mpv_format,
         data: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_set_option
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name, format, data)
+        unsafe {
+            (self
+                .mpv_set_option
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name, format, data)
+        }
     }
     /** Convenience function to set an option to a string value. This is like
  calling mpv_set_option() with MPV_FORMAT_STRING.
@@ -2259,10 +2352,12 @@ impl Libmpv {
         name: *const ::std::os::raw::c_char,
         data: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_set_option_string
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name, data)
+        unsafe {
+            (self
+                .mpv_set_option_string
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name, data)
+        }
     }
     /** Send a command to the player. Commands are the same as those used in
  input.conf, except that this function takes parameters in a pre-split
@@ -2281,7 +2376,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         args: *mut *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self.mpv_command.as_ref().expect("Expected function, got error."))(ctx, args)
+        unsafe {
+            (self
+                .mpv_command
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, args)
+        }
     }
     /** Same as mpv_command(), but allows passing structured data in any format.
  In particular, calling mpv_command() is exactly like calling
@@ -2321,10 +2421,12 @@ impl Libmpv {
         args: *mut mpv_node,
         result: *mut mpv_node,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_command_node
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, args, result)
+        unsafe {
+            (self
+                .mpv_command_node
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, args, result)
+        }
     }
     /** This is essentially identical to mpv_command() but it also returns a result.
 
@@ -2344,10 +2446,12 @@ impl Libmpv {
         args: *mut *const ::std::os::raw::c_char,
         result: *mut mpv_node,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_command_ret
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, args, result)
+        unsafe {
+            (self
+                .mpv_command_ret
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, args, result)
+        }
     }
     /** Same as mpv_command, but use input.conf parsing for splitting arguments.
  This is slightly simpler, but also more error prone, since arguments may
@@ -2359,10 +2463,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         args: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_command_string
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, args)
+        unsafe {
+            (self
+                .mpv_command_string
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, args)
+        }
     }
     /** Same as mpv_command, but run the command asynchronously.
 
@@ -2388,10 +2494,12 @@ impl Libmpv {
         reply_userdata: u64,
         args: *mut *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_command_async
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, reply_userdata, args)
+        unsafe {
+            (self
+                .mpv_command_async
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, reply_userdata, args)
+        }
     }
     /** Same as mpv_command_node(), but run it asynchronously. Basically, this
  function is to mpv_command_node() what mpv_command_async() is to
@@ -2411,10 +2519,12 @@ impl Libmpv {
         reply_userdata: u64,
         args: *mut mpv_node,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_command_node_async
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, reply_userdata, args)
+        unsafe {
+            (self
+                .mpv_command_node_async
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, reply_userdata, args)
+        }
     }
     /** Signal to all async requests with the matching ID to abort. This affects
  the following API calls:
@@ -2449,10 +2559,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         reply_userdata: u64,
     ) {
-        (self
-            .mpv_abort_async_command
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, reply_userdata)
+        unsafe {
+            (self
+                .mpv_abort_async_command
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, reply_userdata)
+        }
     }
     /** Set a property to a given value. Properties are essentially variables which
  can be queried or set at runtime. For example, writing to the pause property
@@ -2490,10 +2602,12 @@ impl Libmpv {
         format: mpv_format,
         data: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_set_property
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name, format, data)
+        unsafe {
+            (self
+                .mpv_set_property
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name, format, data)
+        }
     }
     /** Convenience function to set a property to a string value.
 
@@ -2504,10 +2618,12 @@ impl Libmpv {
         name: *const ::std::os::raw::c_char,
         data: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_set_property_string
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name, data)
+        unsafe {
+            (self
+                .mpv_set_property_string
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name, data)
+        }
     }
     /** Convenience function to delete a property.
 
@@ -2520,10 +2636,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         name: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_del_property
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name)
+        unsafe {
+            (self
+                .mpv_del_property
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name)
+        }
     }
     /** Set a property asynchronously. You will receive the result of the operation
  as MPV_EVENT_SET_PROPERTY_REPLY event. The mpv_event.error field will contain
@@ -2546,12 +2664,14 @@ impl Libmpv {
         format: mpv_format,
         data: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_set_property_async
-            .as_ref()
-            .expect(
-                "Expected function, got error.",
-            ))(ctx, reply_userdata, name, format, data)
+        unsafe {
+            (self
+                .mpv_set_property_async
+                .as_ref()
+                .expect(
+                    "Expected function, got error.",
+                ))(ctx, reply_userdata, name, format, data)
+        }
     }
     /** Read the value of the given property.
 
@@ -2576,10 +2696,12 @@ impl Libmpv {
         format: mpv_format,
         data: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_get_property
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name, format, data)
+        unsafe {
+            (self
+                .mpv_get_property
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name, format, data)
+        }
     }
     /** Return the value of the property with the given name as string. This is
  equivalent to mpv_get_property() with MPV_FORMAT_STRING.
@@ -2597,10 +2719,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         name: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char {
-        (self
-            .mpv_get_property_string
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name)
+        unsafe {
+            (self
+                .mpv_get_property_string
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name)
+        }
     }
     /** Return the property as "OSD" formatted string. This is the same as
  mpv_get_property_string, but using MPV_FORMAT_OSD_STRING.
@@ -2612,10 +2736,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         name: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_char {
-        (self
-            .mpv_get_property_osd_string
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, name)
+        unsafe {
+            (self
+                .mpv_get_property_osd_string
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, name)
+        }
     }
     /** Get a property asynchronously. You will receive the result of the operation
  as well as the property data with the MPV_EVENT_GET_PROPERTY_REPLY event.
@@ -2634,10 +2760,14 @@ impl Libmpv {
         name: *const ::std::os::raw::c_char,
         format: mpv_format,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_get_property_async
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, reply_userdata, name, format)
+        unsafe {
+            (self
+                .mpv_get_property_async
+                .as_ref()
+                .expect(
+                    "Expected function, got error.",
+                ))(ctx, reply_userdata, name, format)
+        }
     }
     /** Get a notification whenever the given property changes. You will receive
  updates as MPV_EVENT_PROPERTY_CHANGE. Note that this is not very precise:
@@ -2699,10 +2829,14 @@ impl Libmpv {
         name: *const ::std::os::raw::c_char,
         format: mpv_format,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_observe_property
-            .as_ref()
-            .expect("Expected function, got error."))(mpv, reply_userdata, name, format)
+        unsafe {
+            (self
+                .mpv_observe_property
+                .as_ref()
+                .expect(
+                    "Expected function, got error.",
+                ))(mpv, reply_userdata, name, format)
+        }
     }
     /** Undo mpv_observe_property(). This will remove all observed properties for
  which the given number was passed as reply_userdata to mpv_observe_property.
@@ -2717,10 +2851,12 @@ impl Libmpv {
         mpv: *mut mpv_handle,
         registered_reply_userdata: u64,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_unobserve_property
-            .as_ref()
-            .expect("Expected function, got error."))(mpv, registered_reply_userdata)
+        unsafe {
+            (self
+                .mpv_unobserve_property
+                .as_ref()
+                .expect("Expected function, got error."))(mpv, registered_reply_userdata)
+        }
     }
     /** Return a string describing the event. For unknown events, NULL is returned.
 
@@ -2738,7 +2874,9 @@ impl Libmpv {
         &self,
         event: mpv_event_id,
     ) -> *const ::std::os::raw::c_char {
-        (self.mpv_event_name.as_ref().expect("Expected function, got error."))(event)
+        unsafe {
+            (self.mpv_event_name.as_ref().expect("Expected function, got error."))(event)
+        }
     }
     /** Convert the given src event to a mpv_node, and set *dst to the result. *dst
  is set to a MPV_FORMAT_NODE_MAP, with fields for corresponding mpv_event and
@@ -2766,10 +2904,12 @@ impl Libmpv {
         dst: *mut mpv_node,
         src: *mut mpv_event,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_event_to_node
-            .as_ref()
-            .expect("Expected function, got error."))(dst, src)
+        unsafe {
+            (self
+                .mpv_event_to_node
+                .as_ref()
+                .expect("Expected function, got error."))(dst, src)
+        }
     }
     /** Enable or disable the given event.
 
@@ -2789,10 +2929,12 @@ impl Libmpv {
         event: mpv_event_id,
         enable: ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_request_event
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, event, enable)
+        unsafe {
+            (self
+                .mpv_request_event
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, event, enable)
+        }
     }
     /** Enable or disable receiving of log messages. These are the messages the
  command line player prints to the terminal. This call sets the minimum
@@ -2811,10 +2953,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         min_level: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_request_log_messages
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, min_level)
+        unsafe {
+            (self
+                .mpv_request_log_messages
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, min_level)
+        }
     }
     /** Wait for the next event, or until the timeout expires, or if another thread
  makes a call to mpv_wakeup(). Passing 0 as timeout will never wait, and
@@ -2850,10 +2994,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         timeout: f64,
     ) -> *mut mpv_event {
-        (self
-            .mpv_wait_event
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, timeout)
+        unsafe {
+            (self
+                .mpv_wait_event
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, timeout)
+        }
     }
     /** Interrupt the current mpv_wait_event() call. This will wake up the thread
  currently waiting in mpv_wait_event(). If no thread is waiting, the next
@@ -2867,7 +3013,9 @@ impl Libmpv {
 
  Safe to be called from mpv render API threads.*/
     pub unsafe fn mpv_wakeup(&self, ctx: *mut mpv_handle) {
-        (self.mpv_wakeup.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self.mpv_wakeup.as_ref().expect("Expected function, got error."))(ctx)
+        }
     }
     /** Set a custom function that should be called when there are new events. Use
  this if blocking in mpv_wait_event() to wait for new events is not feasible.
@@ -2909,10 +3057,12 @@ impl Libmpv {
         cb: ::std::option::Option<unsafe extern "C" fn(d: *mut ::std::os::raw::c_void)>,
         d: *mut ::std::os::raw::c_void,
     ) {
-        (self
-            .mpv_set_wakeup_callback
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, cb, d)
+        unsafe {
+            (self
+                .mpv_set_wakeup_callback
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, cb, d)
+        }
     }
     /** Block until all asynchronous requests are done. This affects functions like
  mpv_command_async(), which return immediately and return their result as
@@ -2925,10 +3075,12 @@ impl Libmpv {
  In case you called mpv_suspend() before, this will also forcibly reset the
  suspend counter of the given handle.*/
     pub unsafe fn mpv_wait_async_requests(&self, ctx: *mut mpv_handle) {
-        (self
-            .mpv_wait_async_requests
-            .as_ref()
-            .expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self
+                .mpv_wait_async_requests
+                .as_ref()
+                .expect("Expected function, got error."))(ctx)
+        }
     }
     /** A hook is like a synchronous event that blocks the player. You register
  a hook handler with this function. You will get an event, which you need
@@ -2970,12 +3122,14 @@ impl Libmpv {
         name: *const ::std::os::raw::c_char,
         priority: ::std::os::raw::c_int,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_hook_add
-            .as_ref()
-            .expect(
-                "Expected function, got error.",
-            ))(ctx, reply_userdata, name, priority)
+        unsafe {
+            (self
+                .mpv_hook_add
+                .as_ref()
+                .expect(
+                    "Expected function, got error.",
+                ))(ctx, reply_userdata, name, priority)
+        }
     }
     /** Respond to a MPV_EVENT_HOOK event. You must call this after you have handled
  the event. There is no way to "cancel" or "stop" the hook.
@@ -2996,10 +3150,12 @@ impl Libmpv {
         ctx: *mut mpv_handle,
         id: u64,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_hook_continue
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, id)
+        unsafe {
+            (self
+                .mpv_hook_continue
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, id)
+        }
     }
     /** Return a UNIX file descriptor referring to the read end of a pipe. This
  pipe can be used to wake up a poll() based processing loop. The purpose of
@@ -3061,7 +3217,12 @@ impl Libmpv {
         &self,
         ctx: *mut mpv_handle,
     ) -> ::std::os::raw::c_int {
-        (self.mpv_get_wakeup_pipe.as_ref().expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self
+                .mpv_get_wakeup_pipe
+                .as_ref()
+                .expect("Expected function, got error."))(ctx)
+        }
     }
     /** Initialize the renderer state. Depending on the backend used, this will
  access the underlying GPU API and initialize its own objects.
@@ -3101,10 +3262,12 @@ impl Libmpv {
         mpv: *mut mpv_handle,
         params: *mut mpv_render_param,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_render_context_create
-            .as_ref()
-            .expect("Expected function, got error."))(res, mpv, params)
+        unsafe {
+            (self
+                .mpv_render_context_create
+                .as_ref()
+                .expect("Expected function, got error."))(res, mpv, params)
+        }
     }
     /** Attempt to change a single parameter. Not all backends and parameter types
  support all kinds of changes.
@@ -3119,10 +3282,12 @@ impl Libmpv {
         ctx: *mut mpv_render_context,
         param: mpv_render_param,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_render_context_set_parameter
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, param)
+        unsafe {
+            (self
+                .mpv_render_context_set_parameter
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, param)
+        }
     }
     /** Retrieve information from the render context. This is NOT a counterpart to
  mpv_render_context_set_parameter(), because you generally can't read
@@ -3146,10 +3311,12 @@ impl Libmpv {
         ctx: *mut mpv_render_context,
         param: mpv_render_param,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_render_context_get_info
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, param)
+        unsafe {
+            (self
+                .mpv_render_context_get_info
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, param)
+        }
     }
     /** Set the callback that notifies you when a new video frame is available, or
  if the video display configuration somehow changed and requires a redraw.
@@ -3171,10 +3338,12 @@ impl Libmpv {
         callback: mpv_render_update_fn,
         callback_ctx: *mut ::std::os::raw::c_void,
     ) {
-        (self
-            .mpv_render_context_set_update_callback
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, callback, callback_ctx)
+        unsafe {
+            (self
+                .mpv_render_context_set_update_callback
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, callback, callback_ctx)
+        }
     }
     /** The API user is supposed to call this when the update callback was invoked
  (like all mpv_render_* functions, this has to happen on the render thread,
@@ -3198,10 +3367,12 @@ impl Libmpv {
          to the API user are set, or if the return value is 0, nothing needs
          to be done.*/
     pub unsafe fn mpv_render_context_update(&self, ctx: *mut mpv_render_context) -> u64 {
-        (self
-            .mpv_render_context_update
-            .as_ref()
-            .expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self
+                .mpv_render_context_update
+                .as_ref()
+                .expect("Expected function, got error."))(ctx)
+        }
     }
     /** Render video.
 
@@ -3240,10 +3411,12 @@ impl Libmpv {
         ctx: *mut mpv_render_context,
         params: *mut mpv_render_param,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_render_context_render
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, params)
+        unsafe {
+            (self
+                .mpv_render_context_render
+                .as_ref()
+                .expect("Expected function, got error."))(ctx, params)
+        }
     }
     /** Tell the renderer that a frame was flipped at the given time. This is
  optional, but can help the player to achieve better timing.
@@ -3255,10 +3428,12 @@ impl Libmpv {
 
  @param ctx a valid render context*/
     pub unsafe fn mpv_render_context_report_swap(&self, ctx: *mut mpv_render_context) {
-        (self
-            .mpv_render_context_report_swap
-            .as_ref()
-            .expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self
+                .mpv_render_context_report_swap
+                .as_ref()
+                .expect("Expected function, got error."))(ctx)
+        }
     }
     /** Destroy the mpv renderer state.
 
@@ -3268,10 +3443,12 @@ impl Libmpv {
  @param ctx a valid render context. After this function returns, this is not
             a valid pointer anymore. NULL is also allowed and does nothing.*/
     pub unsafe fn mpv_render_context_free(&self, ctx: *mut mpv_render_context) {
-        (self
-            .mpv_render_context_free
-            .as_ref()
-            .expect("Expected function, got error."))(ctx)
+        unsafe {
+            (self
+                .mpv_render_context_free
+                .as_ref()
+                .expect("Expected function, got error."))(ctx)
+        }
     }
     /** Add a custom stream protocol. This will register a protocol handler under
  the given protocol prefix, and invoke the given callbacks if an URI with the
@@ -3296,9 +3473,13 @@ impl Libmpv {
         user_data: *mut ::std::os::raw::c_void,
         open_fn: mpv_stream_cb_open_ro_fn,
     ) -> ::std::os::raw::c_int {
-        (self
-            .mpv_stream_cb_add_ro
-            .as_ref()
-            .expect("Expected function, got error."))(ctx, protocol, user_data, open_fn)
+        unsafe {
+            (self
+                .mpv_stream_cb_add_ro
+                .as_ref()
+                .expect(
+                    "Expected function, got error.",
+                ))(ctx, protocol, user_data, open_fn)
+        }
     }
 }

@@ -4,7 +4,6 @@ use std::sync::mpsc::{Sender, channel};
 use std::time::{Duration, Instant};
 
 mod bindings {
-    #![allow(unsafe_op_in_unsafe_fn)]
     include!("../include/libmpv_wrapper_bindings.rs");
 }
 

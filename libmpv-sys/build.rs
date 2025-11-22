@@ -21,7 +21,7 @@ fn generate_bindings() {
 
     let base_url = "https://github.com/mpv-player/mpv/raw/refs/heads/master/include/mpv/";
     let headers = ["client.h", "render.h", "render_gl.h", "stream_cb.h"];
-    let mut wrapper_content = String::new();
+    let mut headers_content = String::new();
 
     println!("Downloading C header files from mpv repository...");
     for header_name in &headers {
@@ -35,25 +35,23 @@ fn generate_bindings() {
             .unwrap_or_else(|_| panic!("Failed to get text from {}", url));
         fs::write(&header_path, &header_content).expect("Failed to write header");
 
-        wrapper_content.push_str(&format!("#include \"{}\"\n", header_name));
+        headers_content.push_str(&format!("#include \"{}\"\n", header_name));
     }
 
-    let wrapper_path = out_path.join("wrapper.h");
-    fs::write(&wrapper_path, &wrapper_content).expect("Failed to write wrapper.h");
+    let headers_path = out_path.join("headers.h");
+    fs::write(&headers_path, &headers_content).expect("Failed to write wrapper.h");
     println!("Header files downloaded and wrapper.h created.");
-
-    let clang_arg = format!("-I{}", out_path.display());
 
     println!("Running bindgen to generate Rust bindings...");
     let bindings = bindgen::Builder::default()
-        .header(wrapper_path.to_str().unwrap())
-        .formatter(bindgen::Formatter::Prettyplease)
+        .header(headers_path.to_str().unwrap())
         .dynamic_library_name("Libmpv")
-        .clang_arg(clang_arg)
-        .impl_debug(true)
         .allowlist_function("mpv_.*")
         .allowlist_type("mpv_.*")
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .rustified_enum(".*")
+        .impl_debug(true)
+        .wrap_unsafe_ops(true)
+        .formatter(bindgen::Formatter::Prettyplease)
         .generate()
         .expect("Unable to generate bindings");
 

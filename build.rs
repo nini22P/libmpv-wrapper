@@ -10,6 +10,12 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src/ffi.rs");
 
+    #[cfg(feature = "generate-bindings")]
+    generate_bindings();
+}
+
+#[cfg(feature = "generate-bindings")]
+fn generate_bindings() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     cbindgen::Builder::new()
@@ -23,12 +29,13 @@ fn main() {
 
     bindgen::Builder::default()
         .header("include/libmpv_wrapper.h")
-        .formatter(bindgen::Formatter::Prettyplease)
         .dynamic_library_name("LibmpvWrapper")
         .allowlist_function("mpv_wrapper_.*")
         .allowlist_type("MpvHandle")
         .allowlist_type("EventCallback")
         .impl_debug(true)
+        .wrap_unsafe_ops(true)
+        .formatter(bindgen::Formatter::Prettyplease)
         .generate()
         .expect("Unable to generate bindings")
         .write_to_file("include/libmpv_wrapper_bindings.rs")

@@ -10,9 +10,7 @@ name = "mpv_wrapper"
 crate-type = ["cdylib"]
 
 [dependencies]
-libmpv-sys = { path = "./libmpv-sys", default-features = false, features = [
-  # "generate-bindings",
-] }
+libmpv-sys = { path = "./libmpv-sys", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
@@ -21,15 +19,20 @@ scopeguard = "1"
 indexmap = { version = "2", features = ["serde"] }
 libloading = "0.8"
 
-[features]
-generate-bindings = ["libmpv-sys/generate-bindings"]
-
 [build-dependencies]
-cbindgen = "0.29"
-bindgen = "0.72"
+cbindgen = { version = "0.29", optional = true }
+bindgen = { version = "0.72", optional = true }
 
 [package.metadata.cargo-post.dependencies]
 zip = "6"
+
+[features]
+default = [
+  "generate-bindings",
+  # "generate-sys-bindings",
+]
+generate-bindings = ["dep:cbindgen", "dep:bindgen"]
+generate-sys-bindings = ["libmpv-sys/generate-bindings"]
 
 [profile.release]
 lto = true

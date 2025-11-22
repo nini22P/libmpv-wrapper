@@ -1,5 +1,4 @@
 use libmpv_sys;
-use log::warn;
 use scopeguard::defer;
 use serde::Serialize;
 
@@ -23,7 +22,7 @@ impl EventListener {
 
         let event = unsafe { *event_ptr };
 
-        if event.event_id == libmpv_sys::mpv_event_id_MPV_EVENT_NONE {
+        if event.event_id == libmpv_sys::mpv_event_id::MPV_EVENT_NONE {
             return None;
         }
 
@@ -78,18 +77,16 @@ pub enum EndFileReason {
     Quit,
     Error,
     Redirect,
-    Unknown,
 }
 
 impl From<libmpv_sys::mpv_end_file_reason> for EndFileReason {
     fn from(reason: libmpv_sys::mpv_end_file_reason) -> Self {
         match reason {
-            libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_EOF => Self::Eof,
-            libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_STOP => Self::Stop,
-            libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_QUIT => Self::Quit,
-            libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_ERROR => Self::Error,
-            libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_REDIRECT => Self::Redirect,
-            _ => Self::Unknown,
+            libmpv_sys::mpv_end_file_reason::MPV_END_FILE_REASON_EOF => Self::Eof,
+            libmpv_sys::mpv_end_file_reason::MPV_END_FILE_REASON_STOP => Self::Stop,
+            libmpv_sys::mpv_end_file_reason::MPV_END_FILE_REASON_QUIT => Self::Quit,
+            libmpv_sys::mpv_end_file_reason::MPV_END_FILE_REASON_ERROR => Self::Error,
+            libmpv_sys::mpv_end_file_reason::MPV_END_FILE_REASON_REDIRECT => Self::Redirect,
         }
     }
 }
@@ -154,8 +151,8 @@ impl Event {
         let lib = get_lib()?;
 
         match event.event_id {
-            libmpv_sys::mpv_event_id_MPV_EVENT_SHUTDOWN => Ok(Some(Event::Shutdown)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_LOG_MESSAGE => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_SHUTDOWN => Ok(Some(Event::Shutdown)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_LOG_MESSAGE => {
                 let log_msg = unsafe { &*(event.data as *const libmpv_sys::mpv_event_log_message) };
 
                 Ok(Some(Event::LogMessage {
@@ -164,7 +161,7 @@ impl Event {
                     text: unsafe { cstr_to_string(log_msg.text) },
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_GET_PROPERTY_REPLY => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_GET_PROPERTY_REPLY => {
                 let property = unsafe { *(event.data as *const libmpv_sys::mpv_event_property) };
 
                 let name = unsafe { cstr_to_string(property.name) };
@@ -184,13 +181,13 @@ impl Event {
                     id: event.reply_userdata,
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_SET_PROPERTY_REPLY => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_SET_PROPERTY_REPLY => {
                 Ok(Some(Event::SetPropertyReply {
                     error: event.error,
                     id: event.reply_userdata,
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_COMMAND_REPLY => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_COMMAND_REPLY => {
                 let cmd = unsafe { *(event.data as *const libmpv_sys::mpv_event_command) };
 
                 let node_ptr = &cmd.result as *const libmpv_sys::mpv_node;
@@ -207,7 +204,7 @@ impl Event {
                     id: event.reply_userdata,
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_START_FILE => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_START_FILE => {
                 let start_file =
                     unsafe { *(event.data as *const libmpv_sys::mpv_event_start_file) };
 
@@ -215,7 +212,7 @@ impl Event {
                     playlist_entry_id: start_file.playlist_entry_id,
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_END_FILE => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_END_FILE => {
                 let end_file = unsafe { *(event.data as *const libmpv_sys::mpv_event_end_file) };
 
                 Ok(Some(Event::EndFile {
@@ -226,10 +223,10 @@ impl Event {
                     playlist_insert_num_entries: end_file.playlist_insert_num_entries,
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_FILE_LOADED => Ok(Some(Event::FileLoaded)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_IDLE => Ok(Some(Event::Idle)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_TICK => Ok(Some(Event::Tick)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_CLIENT_MESSAGE => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_FILE_LOADED => Ok(Some(Event::FileLoaded)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_IDLE => Ok(Some(Event::Idle)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_TICK => Ok(Some(Event::Tick)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_CLIENT_MESSAGE => {
                 let client_msg =
                     unsafe { *(event.data as *const libmpv_sys::mpv_event_client_message) };
 
@@ -245,11 +242,13 @@ impl Event {
 
                 Ok(Some(Event::ClientMessage { args }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_VIDEO_RECONFIG => Ok(Some(Event::VideoReconfig)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_AUDIO_RECONFIG => Ok(Some(Event::AudioReconfig)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_SEEK => Ok(Some(Event::Seek)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_PLAYBACK_RESTART => Ok(Some(Event::PlaybackRestart)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_VIDEO_RECONFIG => Ok(Some(Event::VideoReconfig)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_AUDIO_RECONFIG => Ok(Some(Event::AudioReconfig)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_SEEK => Ok(Some(Event::Seek)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_PLAYBACK_RESTART => {
+                Ok(Some(Event::PlaybackRestart))
+            }
+            libmpv_sys::mpv_event_id::MPV_EVENT_PROPERTY_CHANGE => {
                 let property = unsafe { *(event.data as *const libmpv_sys::mpv_event_property) };
 
                 let name = unsafe { cstr_to_string(property.name) };
@@ -262,16 +261,13 @@ impl Event {
                     id: event.reply_userdata,
                 }))
             }
-            libmpv_sys::mpv_event_id_MPV_EVENT_QUEUE_OVERFLOW => Ok(Some(Event::QueueOverflow)),
-            libmpv_sys::mpv_event_id_MPV_EVENT_HOOK => {
+            libmpv_sys::mpv_event_id::MPV_EVENT_QUEUE_OVERFLOW => Ok(Some(Event::QueueOverflow)),
+            libmpv_sys::mpv_event_id::MPV_EVENT_HOOK => {
                 let hook = unsafe { *(event.data as *const libmpv_sys::mpv_event_hook) };
 
                 Ok(Some(Event::Hook { hook_id: hook.id }))
             }
-            unknown_id => {
-                warn!("Received unknown mpv event ID: {}", unknown_id);
-                Ok(None)
-            }
+            libmpv_sys::mpv_event_id::MPV_EVENT_NONE => Ok(None),
         }
     }
 }
