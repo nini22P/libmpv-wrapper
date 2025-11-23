@@ -84,7 +84,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
             Ok(s) => s,
             Err(e) => {
                 eprintln!(
-                    "[mpv-wrapper] Error: initial_options not valid UTF-8: {}",
+                    "[libmpv-wrapper] Error: initial_options not valid UTF-8: {}",
                     e
                 );
                 return ptr::null_mut();
@@ -99,7 +99,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
             Ok(s) => s,
             Err(e) => {
                 eprintln!(
-                    "[mpv-wrapper] Error: observed_properties not valid UTF-8: {}",
+                    "[libmpv-wrapper] Error: observed_properties not valid UTF-8: {}",
                     e
                 );
                 return ptr::null_mut();
@@ -112,7 +112,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
             Ok(v) => v,
             Err(e) => {
                 eprintln!(
-                    "[mpv-wrapper] Error: Failed to parse initial_options JSON: {}",
+                    "[libmpv-wrapper] Error: Failed to parse initial_options JSON: {}",
                     e
                 );
                 return ptr::null_mut();
@@ -124,7 +124,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
             Ok(v) => v,
             Err(e) => {
                 eprintln!(
-                    "[mpv-wrapper] Error: Failed to parse observed_properties JSON: {}",
+                    "[libmpv-wrapper] Error: Failed to parse observed_properties JSON: {}",
                     e
                 );
                 return ptr::null_mut();
@@ -137,7 +137,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
             Ok(s) => s,
             Err(e) => {
                 eprintln!(
-                    "[mpv-wrapper] Event Error: Failed to serialize event: {}",
+                    "[libmpv-wrapper] Event Error: Failed to serialize event: {}",
                     e
                 );
                 return Ok(());
@@ -151,7 +151,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
             }
             Err(e) => {
                 eprintln!(
-                    "[mpv-wrapper] Event Error: Failed to create CString (null byte?): {}",
+                    "[libmpv-wrapper] Event Error: Failed to create CString (null byte?): {}",
                     e
                 );
             }
@@ -162,7 +162,10 @@ pub unsafe extern "C" fn mpv_wrapper_create(
     let builder = match Builder::new() {
         Ok(b) => b,
         Err(e) => {
-            eprintln!("[mpv-wrapper] Error: Failed to create mpv builder: {}", e);
+            eprintln!(
+                "[libmpv-wrapper] Error: Failed to create mpv builder: {}",
+                e
+            );
             return ptr::null_mut();
         }
     };
@@ -176,7 +179,7 @@ pub unsafe extern "C" fn mpv_wrapper_create(
     match result {
         Ok(handle) => Box::into_raw(Box::new(handle)),
         Err(e) => {
-            eprintln!("[mpv-wrapper] Error: Failed to build mpv handle: {}", e);
+            eprintln!("[libmpv-wrapper] Error: Failed to build mpv handle: {}", e);
             ptr::null_mut()
         }
     }

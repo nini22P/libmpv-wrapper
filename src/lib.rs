@@ -10,6 +10,8 @@ use std::sync::OnceLock;
 
 use libmpv_sys::{self, Libmpv};
 
+use crate::utils::get_current_dir;
+
 pub use self::{
     builder::Builder,
     error::{Error, Result},
@@ -25,7 +27,10 @@ pub fn get_lib() -> Result<&'static Libmpv> {
 
     match result {
         Ok(lib) => Ok(lib),
-        Err(e) => Err(Error::Libmpv(format!("libmpv load failed: {:?}", e))),
+        Err(e) => Err(Error::Libmpv(format!(
+            "libmpv library load failed: {:?}",
+            e
+        ))),
     }
 }
 
@@ -36,6 +41,16 @@ unsafe fn load() -> Result<Libmpv> {
     let lib_name = "libmpv.dylib";
     #[cfg(target_os = "linux")]
     let lib_name = "libmpv.so.2";
+
+    if let Some(dir) = get_current_dir() {
+        let lib_path = dir.join(lib_name);
+
+        if lib_path.exists() {
+            if let Ok(lib) = unsafe { Libmpv::new(&lib_path) } {
+                return Ok(lib);
+            }
+        }
+    }
 
     let lib = unsafe { Libmpv::new(lib_name) }?;
 
