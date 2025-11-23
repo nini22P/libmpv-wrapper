@@ -72,7 +72,7 @@ pub fn get_current_dir() -> Option<PathBuf> {
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
-        use std::ffi::{CStr, c_void};
+        use std::ffi::{CStr, c_char, c_void};
         use std::os::unix::ffi::OsStrExt;
 
         unsafe extern "C" {
@@ -81,9 +81,9 @@ pub fn get_current_dir() -> Option<PathBuf> {
 
         #[repr(C)]
         struct DlInfo {
-            dli_fname: *const i8,
+            dli_fname: *const c_char,
             dli_fbase: *mut c_void,
-            dli_sname: *const i8,
+            dli_sname: *const c_char,
             dli_saddr: *mut c_void,
         }
 
