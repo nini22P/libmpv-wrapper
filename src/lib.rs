@@ -46,15 +46,11 @@ unsafe fn load() -> Result<Libmpv> {
         let lib_path = dir.join(lib_name);
 
         if lib_path.exists() {
-            if let Ok(lib) = unsafe { Libmpv::new(&lib_path) } {
-                return Ok(lib);
-            }
+            return Ok(unsafe { Libmpv::new(&lib_path) }?);
         }
     }
 
-    let lib = unsafe { Libmpv::new(lib_name) }?;
-
-    Ok(lib)
+    Ok(unsafe { Libmpv::new(lib_name) }?)
 }
 
 pub struct MpvHandle(*mut libmpv_sys::mpv_handle);
