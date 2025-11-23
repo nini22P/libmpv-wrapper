@@ -1,6 +1,6 @@
 # libmpv-wrapper
 
-A wrapper for libmpv.
+A dynamic wrapper library for libmpv.
 
 ## Building
 
