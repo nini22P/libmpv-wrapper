@@ -207,6 +207,37 @@ fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
 
         lib.mpv_wrapper_free(result_ptr);
 
+        // Regression: a node-format property. For MPV_FORMAT_NODE mpv writes a whole mpv_node into
+        // the data argument (here a list of strings); 0.1.1 read it through a `*mut mpv_node` and
+        // dereferenced the list pointer as a node, so this crashed or returned garbage.
+        println!("Getting property 'property-list' as node...");
+        let c_name = CString::new("property-list")?;
+        let c_format = CString::new("node")?;
+        let result_ptr = lib.mpv_wrapper_get_property(mpv, c_name.as_ptr(), c_format.as_ptr());
+        assert!(!result_ptr.is_null(), "get_property returned null");
+
+        let result_str = CStr::from_ptr(result_ptr).to_string_lossy();
+        let result_val: serde_json::Value = serde_json::from_str(&result_str)?;
+        lib.mpv_wrapper_free(result_ptr);
+        assert!(
+            result_val["error"].is_null(),
+            "get_property returned an error: {}",
+            result_val["error"]
+        );
+
+        let names = result_val["data"]
+            .as_array()
+            .expect("'property-list' as node is an array");
+        assert!(
+            names.iter().any(|n| n == "pause"),
+            "'property-list' should contain 'pause': {:?}",
+            names
+        );
+        println!(
+            "Verified 'property-list' node property ({} entries).",
+            names.len()
+        );
+
         println!("Destroying mpv...");
         lib.mpv_wrapper_destroy(mpv);
 
